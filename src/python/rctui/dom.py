@@ -1,0 +1,254 @@
+from .core import Element, Component
+from .hooks import useState, useMemo
+
+def Text(text, **kwargs):
+    kwargs['text'] = text
+    return Element('text', kwargs)
+
+def Box(**kwargs):
+    children = kwargs.pop('children', [])
+    return Element('box', kwargs, children)
+
+def ScrollBox(**kwargs):
+    children = kwargs.pop('children', [])
+    return Element('scrollbox', kwargs, children)
+
+def Button(text, **kwargs):
+    kwargs['text'] = text
+    return Element('button', kwargs)
+
+class SelectMenu(Component):
+    def render(self):
+        opts = self.props.get('options', [])
+        return Box(
+            x=self.props.get('x'),
+            y=self.props.get('y'),
+            width=self.props.get('width', 20),
+            height=min(10, len(opts) + 2),
+            bg=(40, 40, 50),
+            border=True,
+            children=[
+                ScrollBox(
+                    flex_grow=1,
+                    children=[
+                        Button(
+                            text=str(opt),
+                            on_click=lambda i=i: self.props['on_select'](i),
+                            width="100%",
+                            bg=(30, 30, 40)
+                        ) for i, opt in enumerate(opts)
+                    ]
+                )
+            ]
+        )
+
+def Input(**kwargs):
+    return Element('input', kwargs)
+
+def Checkbox(label="", checked=False, **kwargs):
+    props = {**kwargs, 'label': label, 'checked': checked}
+    return Element('checkbox', props)
+
+def RadioButton(label="", selected=False, **kwargs):
+    props = {**kwargs, 'label': label, 'selected': selected}
+    return Element('radiobutton', props)
+
+def Switch(label="", on=False, **kwargs):
+    props = {**kwargs, 'label': label, 'on': on}
+    return Element('switch', props)
+
+def ProgressBar(value=0, **kwargs):
+    # Support both 'max' and 'max_val' to avoid shadowing the builtin max()
+    max_v = kwargs.pop('max', kwargs.pop('max_val', 100))
+    props = {**kwargs, 'value': value, 'max_val': max_v}
+    # Ensure renderer gets a normalized 0.0-1.0 progress value
+    props['progress'] = float(value) / float(max_v) if max_v != 0 else 0.0
+    return Element('progressbar', props)
+
+def Divider(**kwargs):
+    return Element('divider', kwargs)
+
+def Dialog(**kwargs):
+    children = kwargs.pop('children', [])
+    return Element('dialog', kwargs, children)
+
+def Modal(**kwargs):
+    children = kwargs.pop('children', [])
+    return Element('modal', kwargs, children)
+
+def Dropdown(options, selected_index=0, **kwargs):
+    props = {**kwargs, 'options': options, 'selected_index': selected_index}
+    return Element('select', props)
+
+def Select(**kwargs): return Dropdown(**kwargs)
+
+def TabSelect(options, selected_index=0, **kwargs):
+    props = {**kwargs, 'options': options, 'selected_index': selected_index}
+    return Element('tabselect', props)
+
+def Textarea(**kwargs):
+    return Element('textarea', kwargs)
+
+def Code(content, language="python", **kwargs):
+    kwargs['content'] = content
+    kwargs['language'] = language
+    return Element('code', kwargs)
+
+def LineNumber(count, **kwargs):
+    return Element('linenumber', kwargs)
+
+def Markdown(content, **kwargs):
+    kwargs['content'] = content
+    return Element('markdown', kwargs)
+
+def Span(text, **kwargs):
+    kwargs['text'] = text
+    return Element('span', kwargs)
+
+def AsciiFont(text, font="standard", **kwargs):
+    kwargs['text'] = text
+    kwargs['font'] = font
+    return Element('asciifont', kwargs)
+
+def Diff(content, **kwargs):
+    kwargs['content'] = content
+    return Element('diff', kwargs)
+
+def Strong(text, **kwargs):
+    kwargs['text'] = text
+    kwargs['bold'] = True
+    return Element('span', kwargs)
+
+def B(text, **kwargs): return Strong(text, **kwargs)
+
+def Em(text, **kwargs):
+    kwargs['text'] = text
+    kwargs['italic'] = True
+    return Element('span', kwargs)
+
+def I(text, **kwargs): return Em(text, **kwargs)
+
+def U(text, **kwargs):
+    kwargs['text'] = text
+    kwargs['underline'] = True
+    return Element('span', kwargs)
+
+def Br(**kwargs):
+    return Element('text', {'text': '\n'})
+
+def Toast(text, duration=3.0, **kwargs):
+    kwargs['text'] = text
+    kwargs['duration'] = duration
+    return Element('toast', kwargs)
+
+def Timeline(**kwargs):
+    return Element('timeline', kwargs)
+
+def VirtualListClass(props):
+    from .hooks import useState
+    
+    items = props.get('items', [])
+    render_item = props.get('render_item')
+    item_height = props.get('item_height', 1)
+    
+    scroll_y, set_scroll_y = useState(0)
+    view_h, set_view_h = useState(props.get('height', 15)) 
+    
+    def on_scroll_callback(y, h=None):
+        set_scroll_y(y)
+        if h is not None:
+            set_view_h(h)
+    
+    # Calculate visible range with a small buffer (1 item above/below)
+    start_idx = max(0, int(scroll_y // item_height) - 1)
+    end_idx = min(len(items), int((scroll_y + view_h) // item_height) + 2)
+    
+    children = []
+    # Spacer at top
+    if start_idx > 0:
+        children.append(Box(height=start_idx * item_height))
+        
+    # Visible items
+    for i in range(start_idx, end_idx):
+        children.append(render_item(items[i], i))
+        
+    # Spacer at bottom
+    if end_idx < len(items):
+        children.append(Box(height=(len(items) - end_idx) * item_height))
+        
+    return ScrollBox(
+        children=children,
+        on_scroll=on_scroll_callback,
+        **{k:v for k,v in props.items() if k not in ('items', 'render_item', 'item_height', 'on_scroll')}
+    )
+
+def VirtualList(**kwargs):
+    return Element(VirtualListClass, kwargs)
+
+def TableClass(props):
+    columns = props.get('columns', [])
+    data = props.get('data', [])
+    sort_key, set_sort_key = useState(None)
+    sort_desc, set_sort_desc = useState(False)
+    
+    def on_header_click(key):
+        if sort_key == key:
+            set_sort_desc(not sort_desc)
+        else:
+            set_sort_key(key)
+            set_sort_desc(False)
+            
+    sorted_data = useMemo(lambda: (
+        sorted(data, key=lambda x: x.get(sort_key, ""), reverse=sort_desc) if sort_key else data
+    ), [data, sort_key, sort_desc])
+    
+    header_children = []
+    for col in columns:
+        key = col.get('key', '')
+        title = col.get('title', key)
+        width = col.get('width', 10)
+        
+        indicator = ""
+        if sort_key == key:
+            indicator = " ↓" if sort_desc else " ↑"
+            
+        header_children.append(
+            Box(
+                width=width, 
+                on_click=lambda k=key: on_header_click(k),
+                children=[Text(f"{title}{indicator}", bold=True)]
+            )
+        )
+        
+    header = Box(
+        flex_direction='row',
+        height=1,
+        bg=(50, 50, 70),
+        children=header_children
+    )
+    
+    body_rows = []
+    for item in sorted_data:
+        row = Box(
+            flex_direction='row',
+            height=1,
+            children=[
+                Box(width=col.get('width', 10), children=[Text(str(item.get(col.get('key', ''), '')))])
+                for col in columns
+            ]
+        )
+        body_rows.append(row)
+        
+    other_props = {k:v for k,v in props.items() if k not in ('columns', 'data')}
+    
+    return Box(
+        flex_direction='column',
+        children=[
+            header,
+            ScrollBox(flex_grow=1, children=body_rows)
+        ],
+        **other_props
+    )
+
+def Table(**kwargs):
+    return Element(TableClass, kwargs)

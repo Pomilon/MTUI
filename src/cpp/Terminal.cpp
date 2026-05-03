@@ -1,0 +1,131 @@
+#include "Terminal.hpp"
+#include <iostream>
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <termios.h>
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+#endif
+
+Terminal::Terminal() {
+#ifdef _WIN32
+    // Enable VT100 support on Windows 10+
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut != INVALID_HANDLE_VALUE) {
+        DWORD dwMode = 0;
+        if (GetConsoleMode(hOut, &dwMode)) {
+            original_out_mode = dwMode;
+            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+            SetConsoleMode(hOut, dwMode);
+        }
+    }
+#endif
+}
+
+Terminal::~Terminal() {
+    if (raw_mode_enabled) {
+        disableRawMode();
+    }
+#ifdef _WIN32
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut != INVALID_HANDLE_VALUE) {
+        SetConsoleMode(hOut, original_out_mode);
+    }
+#endif
+}
+
+void Terminal::enableRawMode() {
+#ifdef _WIN32
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn != INVALID_HANDLE_VALUE) {
+        DWORD dwMode = 0;
+        if (GetConsoleMode(hIn, &dwMode)) {
+            original_in_mode = dwMode;
+            dwMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
+            dwMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+            SetConsoleMode(hIn, dwMode);
+        }
+    }
+#else
+    tcgetattr(STDIN_FILENO, &original_termios);
+    struct termios raw = original_termios;
+    raw.c_lflag &= ~(ECHO | ICANON);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+#endif
+    raw_mode_enabled = true;
+}
+
+void Terminal::disableRawMode() {
+#ifdef _WIN32
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn != INVALID_HANDLE_VALUE) {
+        SetConsoleMode(hIn, original_in_mode);
+    }
+#else
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_termios);
+#endif
+    raw_mode_enabled = false;
+}
+
+void Terminal::enterAlternateScreen() {
+    write("\x1b[?1049h");
+}
+
+void Terminal::exitAlternateScreen() {
+    write("\x1b[?1049l");
+}
+
+void Terminal::enableMouseTracking() {
+    write("\x1b[?1000h\x1b[?1006h"); // Enable mouse tracking and SGR mode
+}
+
+void Terminal::disableMouseTracking() {
+    write("\x1b[?1000l\x1b[?1006l");
+}
+
+void Terminal::clearScreen() {
+    write("\x1b[2J\x1b[H");
+}
+
+void Terminal::setCursorPosition(int x, int y) {
+    write("\x1b[" + std::to_string(y) + ";" + std::to_string(x) + "H");
+}
+
+void Terminal::setForegroundColor(int r, int g, int b) {
+    write("\x1b[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m");
+}
+
+void Terminal::setBackgroundColor(int r, int g, int b) {
+    write("\x1b[48;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m");
+}
+
+void Terminal::resetColors() {
+    write("\x1b[0m");
+}
+
+void Terminal::write(const std::string& text) {
+    std::cout << text;
+}
+
+void Terminal::flush() {
+    std::cout.flush();
+}
+
+Terminal::WindowSize Terminal::getSize() {
+#ifdef _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+        return {csbi.srWindow.Bottom - csbi.srWindow.Top + 1,
+                csbi.srWindow.Right - csbi.srWindow.Left + 1};
+    }
+    return {24, 80};
+#else
+    struct winsize w;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) {
+        return {24, 80}; // Fallback
+    }
+    return {w.ws_row, w.ws_col};
+#endif
+}
