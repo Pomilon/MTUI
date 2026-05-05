@@ -17,19 +17,22 @@ def resolve_style(props, parent_style=None):
         d_bg = (parent_style.bg_r, parent_style.bg_g, parent_style.bg_b)
         d_bold = parent_style.bold
 
-    # Override with current props
-    fg = props.get('fg', d_fg)
-    bg = props.get('bg', d_bg)
-    bold = props.get('bold', d_bold)
+    # Check for a 'style' dictionary prop
+    style_dict = props.get('style', {})
+    
+    # Override with current props or style_dict
+    fg = props.get('fg', style_dict.get('fg', d_fg))
+    bg = props.get('bg', style_dict.get('bg', d_bg))
+    bold = props.get('bold', style_dict.get('bold', d_bold))
 
     # Handle individual components if provided
-    fg_r = props.get('fg_r', fg[0] if isinstance(fg, (list, tuple)) else 255)
-    fg_g = props.get('fg_g', fg[1] if isinstance(fg, (list, tuple)) else 255)
-    fg_b = props.get('fg_b', fg[2] if isinstance(fg, (list, tuple)) else 255)
+    fg_r = props.get('fg_r', style_dict.get('fg_r', fg[0] if isinstance(fg, (list, tuple)) else 255))
+    fg_g = props.get('fg_g', style_dict.get('fg_g', fg[1] if isinstance(fg, (list, tuple)) else 255))
+    fg_b = props.get('fg_b', style_dict.get('fg_b', fg[2] if isinstance(fg, (list, tuple)) else 255))
     
-    bg_r = props.get('bg_r', bg[0] if isinstance(bg, (list, tuple)) else 0)
-    bg_g = props.get('bg_g', bg[1] if isinstance(bg, (list, tuple)) else 0)
-    bg_b = props.get('bg_b', bg[2] if isinstance(bg, (list, tuple)) else 0)
+    bg_r = props.get('bg_r', style_dict.get('bg_r', bg[0] if isinstance(bg, (list, tuple)) else 0))
+    bg_g = props.get('bg_g', style_dict.get('bg_g', bg[1] if isinstance(bg, (list, tuple)) else 0))
+    bg_b = props.get('bg_b', style_dict.get('bg_b', bg[2] if isinstance(bg, (list, tuple)) else 0))
 
     return tui_core.Style(int(fg_r), int(fg_g), int(fg_b), int(bg_r), int(bg_g), int(bg_b), bool(bold))
 

@@ -21,20 +21,29 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-# Try to find pybind11 from the Python environment first
-execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" -c "import pybind11; print(pybind11.get_cmake_dir())"
-    OUTPUT_VARIABLE pybind11_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-)
+# Discovery of pybind11
+find_package(pybind11 CONFIG QUIET)
 
-if(pybind11_DIR)
-    file(TO_CMAKE_PATH "${pybind11_DIR}" pybind11_DIR)
-    message(STATUS "Found pybind11 via Python: ${pybind11_DIR}")
-    find_package(pybind11 REQUIRED PATHS "${pybind11_DIR}")
-else()
-    find_package(pybind11 REQUIRED)
+if(NOT pybind11_FOUND)
+    # Fallback: try to find pybind11 from the Python environment
+    if(NOT PYTHON_EXECUTABLE)
+        set(PYTHON_EXECUTABLE "python3")
+    endif()
+    
+    execute_process(
+        COMMAND "${PYTHON_EXECUTABLE}" -c "import pybind11; print(pybind11.get_cmake_dir())"
+        OUTPUT_VARIABLE pybind11_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+
+    if(pybind11_DIR)
+        file(TO_CMAKE_PATH "${pybind11_DIR}" pybind11_DIR)
+        message(STATUS "Found pybind11 via Python: ${pybind11_DIR}")
+        find_package(pybind11 REQUIRED PATHS "${pybind11_DIR}")
+    else()
+        find_package(pybind11 REQUIRED)
+    endif()
 endif()
 
 # Use the standard pybind11 module helper

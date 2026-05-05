@@ -71,8 +71,14 @@ class CMakeBuild(build_ext):
             cmake_args += [f'-DCMAKE_BUILD_TYPE={cfg}']
             build_args += ['--', '-j2']
 
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
+        if os.path.exists(self.build_temp):
+            shutil.rmtree(self.build_temp)
+        os.makedirs(self.build_temp)
+
+        # Remove stale CMakeCache.txt in root if it exists
+        stale_cache = os.path.join(ext.sourcedir, 'CMakeCache.txt')
+        if os.path.exists(stale_cache):
+            os.remove(stale_cache)
 
         # Always run cmake to ensure correct configuration
         print(f"Configuring with: {cmake_bin} {ext.sourcedir} {' '.join(cmake_args)}")

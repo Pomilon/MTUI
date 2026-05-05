@@ -84,7 +84,17 @@ def build_tree(element, app, old_node=None):
             comp.app = app
             comp.component_did_mount()
             
-        rendered_element = comp.render()
+        from . import hooks
+        prev_instance = hooks._current_instance
+        prev_index = hooks._hook_index
+        hooks._current_instance = comp
+        hooks._hook_index = 0
+        try:
+            rendered_element = comp.render()
+        finally:
+            hooks._current_instance = prev_instance
+            hooks._hook_index = prev_index
+
         node = build_tree(rendered_element, app, old_node)
         node.component = comp
         comp._root_node = node

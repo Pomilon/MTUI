@@ -27,10 +27,17 @@ class App:
             sys.stdout.write("\x1b[?1003h\x1b[?1006h")
             sys.stdout.flush()
         
+        # Debug logging
+        self.debug_file = debug_file
+        if self.debug_file:
+            with open(self.debug_file, "w") as f:
+                f.write(f"--- RC-TUI Log Start: {time.ctime()} ---\n")
+
         cols, rows = self.terminal.get_size()
+        self.log(f"Terminal size: {cols}x{rows}")
         self.curr_buffer = tui_core.Buffer(cols, rows)
         self.next_buffer = tui_core.Buffer(cols, rows)
-        
+
         # Only create renderer if terminal is the expected C++ type
         if isinstance(self.terminal, tui_core.Terminal):
             self.renderer = tui_core.Renderer(self.terminal)
@@ -39,12 +46,6 @@ class App:
             
         self.canvas = Canvas(self.next_buffer)
         self.canvas.app = self
-
-        # Debug logging
-        self.debug_file = debug_file
-        if self.debug_file:
-            with open(self.debug_file, "w") as f:
-                f.write(f"--- RC-TUI Log Start: {time.ctime()} ---\n")
 
         # We now manage a stack of windows. Each window is (element, node)
         self.windows = []
@@ -304,7 +305,8 @@ class App:
                     while n:
                         on_click = n.props.get('on_click')
                         if on_click:
-                            on_click()
+                            # Pass the event to the handler
+                            on_click(event)
                             self.request_render()
                             break
                         n = n.parent
