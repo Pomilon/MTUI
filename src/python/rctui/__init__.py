@@ -1,4 +1,4 @@
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from . import _rctui_core as tui_core
 from .core import Element, Component
