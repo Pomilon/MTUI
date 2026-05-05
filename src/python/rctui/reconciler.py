@@ -155,11 +155,13 @@ def build_tree(element, app, old_node=None):
             
         # Carry over state/focus for persistent primitives
         if old_node and old_node.type == element.type:
+            node.is_focused = old_node.is_focused
+            if node.is_focused:
+                app.focused_node = node
+                
             if element.type in ('input', 'textarea'):
                 node.props['value'] = old_node.props.get('value', element.props.get('value', ''))
-                node.is_focused = old_node.is_focused
-                if node.is_focused:
-                    app.focused_node = node
+            
             if element.type == 'scrollbox':
                 node.scroll_y = old_node.scroll_y
                 node.scroll_x = old_node.scroll_x

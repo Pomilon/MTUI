@@ -119,7 +119,9 @@ def measure(node, max_w, max_h):
         h = parse_dim(h_prop, max_h)
     
     if w is not None and h is not None and node.type not in ('dialog', 'modal', 'box', 'scrollbox'):
-        return w + ml + mr, h + mt + mb
+        node.w = w + pl + pr + ml + mr
+        node.h = h + pt + pb + mt + mb
+        return node.w, node.h
         
     flex_dir = node.props.get('flex_direction', 'column')
     inner_max_w = max_w - pl - pr - ml - mr if max_w is not None else None

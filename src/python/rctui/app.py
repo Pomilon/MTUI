@@ -69,19 +69,25 @@ class App:
 
     def cleanup(self):
         # Run cleanups for all windows
-        for win in self.windows:
-            if win['node']:
-                from .reconciler import _unmount_node
-                _unmount_node(win['node'])
+        try:
+            from .reconciler import _unmount_node
+            for win in self.windows:
+                if win.get('node'):
+                    _unmount_node(win['node'])
+        except (ImportError, AttributeError, NameError):
+            pass
 
         if hasattr(self, 'terminal'):
-            if not isinstance(self.terminal, tui_core.Terminal):
-                return
-            sys.stdout.write("\x1b[?1003l") # Disable motion tracking
-            sys.stdout.flush()
-            self.terminal.disable_mouse_tracking()
-            self.terminal.exit_alternate_screen()
-            self.terminal.disable_raw_mode()
+            try:
+                if not isinstance(self.terminal, tui_core.Terminal):
+                    return
+                sys.stdout.write("\x1b[?1003l") # Disable motion tracking
+                sys.stdout.flush()
+                self.terminal.disable_mouse_tracking()
+                self.terminal.exit_alternate_screen()
+                self.terminal.disable_raw_mode()
+            except (AttributeError, TypeError, NameError):
+                pass
 
     def log(self, message):
         if self.debug_file:
@@ -112,7 +118,10 @@ class App:
 
     def close_window(self):
         if len(self.windows) > 1:
-            self.windows.pop()
+            win = self.windows.pop()
+            if win.get('node'):
+                from .reconciler import _unmount_node
+                _unmount_node(win['node'])
             self.request_render()
 
     def request_render(self):
@@ -140,8 +149,7 @@ class App:
             
             # Reconcile and layout windows
             for i, win in enumerate(self.windows):
-                is_top = (i == len(self.windows) - 1)
-                if is_top or resized or win['node'] is None:
+                if self.needs_render or resized or win['node'] is None:
                     win['node'] = build_tree(win['element'], self, win['node'])
                     measure(win['node'], self.canvas.width, self.canvas.height)
                     do_layout(win['node'], 0, 0, self.canvas.width, self.canvas.height)
@@ -305,8 +313,26 @@ class App:
                     while n:
                         on_click = n.props.get('on_click')
                         if on_click:
-                            # Pass the event to the handler
-                            on_click(event)
+                            try:
+                                # Inspect the handler to see if it wants the event
+                                if hasattr(on_click, '__code__'):
+                                    num_args = on_click.__code__.co_argcount
+                                    num_defaults = len(on_click.__defaults__ or [])
+                                    # If it REQUIRES an argument, pass the event.
+                                    # If it has 0 required args (even if it has defaults), call with none.
+                                    if num_args - num_defaults > 0:
+                                        on_click(event)
+                                    else:
+                                        on_click()
+                                else:
+                                    # Fallback for non-function callables
+                                    try:
+                                        on_click(event)
+                                    except TypeError:
+                                        on_click()
+                            except Exception as e:
+                                self.log_error(f"on_click handler error: {e}")
+                                
                             self.request_render()
                             break
                         n = n.parent
@@ -333,6 +359,13 @@ class App:
             focused_node = self.focused_node
             
             if focused_node:
+                # Generic key down handler
+                on_key_down = focused_node.props.get('on_key_down')
+                if on_key_down:
+                    if on_key_down(event):
+                        self.request_render()
+                        return
+
                 if focused_node.type == 'tabselect' and event.key in ('LEFT', 'RIGHT', ' ', 'ENTER'):
                     on_change = focused_node.props.get('on_change')
                     if on_change:
@@ -367,6 +400,11 @@ class App:
                     if event.key == 'BACKSPACE':
                         if val:
                             val = val[:-1]
+                    elif event.key == 'ENTER':
+                        on_submit = focused_node.props.get('on_submit')
+                        if on_submit:
+                            on_submit(val)
+                            self.request_render()
                     elif len(event.key) == 1:
                         val += event.key
                     
@@ -433,15 +471,37 @@ class App:
         self.focused_node = all_focusable[next_idx]
 
     def _hit_test(self, node, x, y):
-        # Reverse order to hit top-most children first
+        # 1. Check if the point is within the node's own screen bounds
+        if not (node.screen_x <= x < node.screen_x + node.w and \
+                node.screen_y <= y < node.screen_y + node.h):
+            return None
+            
+        # 2. Check for clipping by parent (e.g. ScrollBox)
+        # We walk up the tree and ensure the point is within the 'inner' bounds of all parents
+        p = node.parent
+        while p:
+            inner_x = p.screen_x
+            inner_y = p.screen_y
+            inner_w = p.w
+            inner_h = p.h
+            
+            if p.props.get('border'):
+                inner_x += 1
+                inner_y += 1
+                inner_w -= 2
+                inner_h -= 2
+                
+            if not (inner_x <= x < inner_x + inner_w and \
+                    inner_y <= y < inner_y + inner_h):
+                return None
+            p = p.parent
+
+        # 3. Descend into children (reverse order for top-most hit)
         for child in reversed(node.children):
             res = self._hit_test(child, x, y)
             if res: return res
             
-        if node.screen_x <= x < node.screen_x + node.w and \
-           node.screen_y <= y < node.screen_y + node.h:
-            return node
-        return None
+        return node
 
     def _open_select_menu(self, target):
         options = target.props.get('options', [])

@@ -10,7 +10,7 @@ class KeyEvent:
 
 @dataclass
 class MouseEvent:
-    type: str # 'CLICK', 'MOVE', 'SCROLL'
+    type: str # 'CLICK', 'MOVE', 'SCROLL', 'RELEASE'
     x: int
     y: int
     button: Optional[int] = None

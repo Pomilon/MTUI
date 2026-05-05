@@ -116,16 +116,20 @@ class InputManager:
                             b = int(parts[0])
                             x = int(parts[1]) - 1
                             y = int(parts[2]) - 1
+                            
                             if terminator == 'M': # Button Press / Scroll / Motion
-                                if b == 0: return MouseEvent('CLICK', x, y, button=1), len(seq)
-                                if b == 1: return MouseEvent('CLICK', x, y, button=2), len(seq)
-                                if b == 2: return MouseEvent('CLICK', x, y, button=3), len(seq)
-                                if b == 35: return MouseEvent('MOVE', x, y, button=0), len(seq)
                                 if b == 64: return MouseEvent('SCROLL', x, y, delta=-1), len(seq)
                                 if b == 65: return MouseEvent('SCROLL', x, y, delta=1), len(seq)
-                                if b & 32: return MouseEvent('MOVE', x, y, button=(b & 3)), len(seq)
+                                
+                                # 32 bit is motion
+                                type_ = 'MOVE' if (b & 32) else 'CLICK'
+                                btn = (b & 3) + 1 # 0,1,2 -> 1,2,3
+                                if b == 35: # Special case: motion with no button
+                                    btn = 0
+                                return MouseEvent(type_, x, y, button=btn), len(seq)
+                            
                             elif terminator == 'm': # Release
-                                return MouseEvent('RELEASE', x, y, button=(b & 3)), len(seq)
+                                return MouseEvent('RELEASE', x, y, button=(b & 3) + 1), len(seq)
                         return None, len(seq)
                     except Exception:
                         return None, len(seq)
