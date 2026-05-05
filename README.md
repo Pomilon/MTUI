@@ -1,111 +1,68 @@
-# RC-TUI
+# rc-tui
 
-RC-TUI is a modern, high-performance Terminal User Interface (TUI) library for Python, inspired by React. It features a hooks-based state management system, efficient virtualization for large datasets, and a powerful rendering engine with support for advanced widgets.
+**rc-tui** is a high-performance, React-inspired Terminal User Interface (TUI) library for Python. It combines the declarative power of modern web frameworks with a high-performance C++ rendering engine to create fluid, beautiful, and complex terminal applications.
 
-## Features
+## Key Features
 
-- React-Inspired Hooks: Use useState, useEffect, useMemo, useCallback, and useRef to manage component state and lifecycle.
-- Efficient Virtualization: Render lists with thousands of items smoothly using the VirtualList widget.
-- Advanced Widgets:
-  - Table: Sortable columns and dynamic data rendering.
-  - Tabs: Intuitive tab-based navigation.
-  - Inputs & Textareas: Full keyboard support with focus management.
-  - Progress Bars & Switches: Highly customizable visual indicators.
-- Native Performance: Core rendering and layout logic designed for speed and responsiveness.
-- Developer Inspector: Toggle with F12 to inspect the UI tree, dimensions, and styling in real-time.
+-   **Declarative UI**: Build interfaces using components, props, and state, just like React.
+-   **High-Performance Engine**: Core rendering, terminal management, and diffing logic implemented in C++ for maximum speed.
+-   **Built-in Layout Engine**: Flexbox-like layout system for easy positioning and responsiveness.
+-   **Rich Component Library**: Includes Box, Text, Button, Input, ScrollBox, Markdown, Code, Tables, and more.
+-   **Hooks System**: `useState`, `useEffect`, `useMemo`, and `useCallback` for clean state management.
+-   **Mouse Support**: Full support for clicking, scrolling, and move events.
+
+## Platform Support
+
+| Platform | Support Status | Notes |
+| :--- | :--- | :--- |
+| **Linux** | ✅ Fully Supported | Primary development and testing platform. |
+| **macOS** | ⚠️ Build Only | Wheels are provided, but functionality is currently untested. |
+| **Windows** | ❌ Not Supported | CI/CD and PyPI publishing are disabled. Local builds may work but are not officially supported. |
 
 ## Installation
 
 ```bash
-pip install rctui # package available soon!
+pip install rc-tui
 ```
 
-## Building from Source
-
-RC-TUI uses a C++ core for high-performance rendering. To build it from source, you'll need a C++17 compiler and CMake.
-
-```bash
-# Clone the repository
-git clone https://github.com/Pomilon/RC-TUI.git
-cd RC-TUI
-
-# Install the package in editable mode
-pip install -e .
-```
+*Note: Since this library uses native extensions, binary wheels are provided for Linux and macOS. If no wheel is available for your architecture, you will need `cmake`, `ninja`, and a C++17 compiler installed.*
 
 ## Quick Start
 
 ```python
-from rctui import App, Box, Text, Button, useState
+from rctui import App, Component, Box, Text, Button, useState
 
-def MyComponent(props):
-    count, set_count = useState(0)
-    
-    return Box(
-        flex_direction="column",
-        align_items="center",
-        justify_content="center",
-        children=[
-            Text(f"Count: {count}", fg=(0, 255, 255)),
-            Button("Increment", on_click=lambda: set_count(count + 1), bg=(0, 128, 0))
-        ]
-    )
+class Counter(Component):
+    def render(self):
+        count, set_count = useState(0)
+        
+        return Box(
+            flex_direction="column",
+            align_items="center",
+            justify_content="center",
+            border="single",
+            children=[
+                Text(f"Count: {count}", style={"bold": True}),
+                Button(
+                    "Increment", 
+                    on_click=lambda _: set_count(count + 1)
+                )
+            ]
+        )
 
-app = App(MyComponent)
-app.run()
+if __name__ == "__main__":
+    app = App(Counter)
+    app.run()
 ```
 
-## Advanced Usage
+## Documentation
 
-### Virtualized List
-
-```python
-from rctui import VirtualList, Text
-
-items = [{"id": i, "name": f"Item {i}"} for i in range(1000)]
-
-def render_item(item, index):
-    return Text(f"Row {index}: {item['name']}")
-
-# Inside a component:
-VirtualList(
-    items=items,
-    render_item=render_item,
-    item_height=1
-)
-```
-
-### Hooks
-
-```python
-from rctui import useState, useEffect
-import threading
-import time
-
-def Timer(props):
-    seconds, set_seconds = useState(0)
-    
-    def effect():
-        running = True
-        def loop():
-            while running:
-                time.sleep(1)
-                set_seconds(s => s + 1)
-        
-        t = threading.Thread(target=loop, daemon=True)
-        t.start()
-        
-        return lambda: setattr(running, False) # Cleanup function
-        
-    useEffect(effect, [])
-    
-    return Text(f"Elapsed: {seconds}s")
-```
-
-## Developer Tools
-
-Press F12 while the app is running to enable the Hover Inspector. Hover over any element to see its type, coordinates, and bounding box.
+For detailed information, see the [docs](./docs) folder:
+- [Architecture](./docs/architecture.md)
+- [Component Reference](./docs/components.md)
+- [Hooks API](./docs/hooks.md)
+- [Events & Input](./docs/events.md)
 
 ## License
 
-MIT - Copyright (c) 2026 Pomilon
+MIT
