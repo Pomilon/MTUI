@@ -26,63 +26,47 @@ All `rc-tui` components share a set of common props for layout and styling.
 ## Core Components
 
 ### `Box`
-The fundamental container for layout. Equivalent to `<div>` in HTML.
+The primary layout container. Equivalent to `<div>` in HTML.
+- **Props**: All common props.
 
 ### `Text`
-Displays a string of text. Supports word wrapping.
+Standard text display.
+- **Props**: `text` (str). Supports multi-line.
 
 ### `Button`
-An interactive element with `on_click` support.
+Interactive button component.
+- **Props**: `text` (str), `on_click` (callable).
 
 ### `Input`
-A single-line text input field.
-
-### `ScrollBox`
-A container that provides vertical and/or horizontal scrolling for its children.
-
-### `Markdown`
-Renders formatted markdown text, including headers, lists, and code blocks.
-
-### `Code`
-Syntax-highlighted code blocks (using `tree-sitter`).
-
-### `Table`
-Renders tabular data with headers and rows.
+Single-line text input.
+- **Props**: `value`, `placeholder`, `on_change`.
 
 ### `ProgressBar`
-A visual representation of progress (0.0 to 1.0).
+Visual progress indicator.
+- **Props**: `progress` (0.0 to 1.0), `color`.
 
-### `AsciiFont`
-Renders text using ASCII art fonts (via `pyfiglet`).
+### `Markdown`
+Rich text renderer using Tree-sitter.
+- **Props**: `content` (str). Supports headers, bold, italic, code blocks, and lists.
+
+### `Code`
+Syntax highlighted code block.
+- **Props**: `content` (str), `language` (str).
+
+### `ScrollBox`
+A scrollable container for content that exceeds its bounds.
+- **Props**: `scroll_x`, `scroll_y`, `on_scroll`.
+
+### `Table`
+Grid layout for structured data.
+- **Props**: `headers`, `rows`, `column_widths`.
 
 ---
 
-## Example: Complex Layout
+## Utility Components
 
-```python
-Box(
-    flex_direction="column",
-    width="100%",
-    height="100%",
-    children=[
-        # Header
-        Box(
-            height=3,
-            border="single",
-            children=[Text("My Dashboard", style={"bold": True})]
-        ),
-        # Main Content
-        Box(
-            flex_direction="row",
-            children=[
-                # Sidebar
-                Box(width=20, border="single", children=[...]),
-                # Main Body
-                Box(flex_grow=1, border="single", children=[...])
-            ]
-        ),
-        # Footer
-        Box(height=1, children=[Text("Press Q to quit")])
-    ]
-)
-```
+- `Divider`: Horizontal or vertical line.
+- `AsciiFont`: Large stylized text using `pyfiglet`.
+- `Checkbox` / `RadioButton` / `Switch`: Form inputs.
+- `Dialog` / `Modal`: Overlays for user interaction.
+- `Toast`: Transient notification messages.

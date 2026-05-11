@@ -2,30 +2,26 @@
 
 **rc-tui** is a high-performance, React-inspired Terminal User Interface (TUI) library for Python. It combines the declarative power of modern web frameworks with a high-performance C++ rendering engine to create fluid, beautiful, and complex terminal applications.
 
-## Key Features
+## Why rc-tui?
 
--   **Declarative UI**: Build interfaces using components, props, and state, just like React.
--   **High-Performance Engine**: Core rendering, terminal management, and diffing logic implemented in C++ for maximum speed.
--   **Advanced Styling**: Web-like styling with Hex colors, pseudo-classes (`hover_style`, `focus_style`), inheritance, and text effects (italic, underline, etc.).
--   **Full Mouse Support**: Support for clicking, scrolling, and **real-time motion tracking** for hover effects and tooltips.
--   **Built-in Layout Engine**: Flexbox-like layout system with support for `gap`, `flex_grow`, and percentage dimensions.
--   **Rich Component Library**: Includes Box, Text, Button, Input, ScrollBox, Markdown, Code, Tables, and more.
+- **Declarative & Component-Based**: Build your UI with functional components and hooks (`useState`, `useEffect`).
+- **Hybrid Performance**: High-frequency render logic and terminal diffing are in C++; layout and logic are in Python.
+- **Advanced Styling**: Web-standard colors (Hex, RGB), pseudo-classes (`hover`, `focus`), and rich text attributes.
+- **Cross-Platform**: Fully supports Linux, macOS, and Windows 10+ (Verified via CI/CD).
 
-## Platform Support
+## Key Features (v0.2.0)
 
-| Platform | Support Status | Notes |
-| :--- | :--- | :--- |
-| **Linux** | ✅ Fully Supported | Primary development and testing platform. |
-| **macOS** | ✅ Supported | Verified via CI/CD (GitHub Actions). |
-| **Windows** | ✅ Supported | Verified via CI/CD (GitHub Actions). Requires Windows 10+. |
+- **Rich Styling**: Hex colors, inheritance, `box_shadow`, and `text_transform`.
+- **Interactive Pseudo-classes**: Define `hover_style` and `focus_style` for responsive components.
+- **Full Mouse Support**: Real-time motion tracking for hovers and tooltips.
+- **Flexbox Layout**: Powerful layout engine with `gap`, `flex_grow`, and percentage dimensions.
+- **Markdown & Code**: Built-in support for Markdown and syntax-highlighted code blocks (via Tree-sitter).
 
 ## Installation
 
 ```bash
 pip install rc-tui
 ```
-
-*Note: Since this library uses native extensions, binary wheels are provided for Linux and macOS. If no wheel is available for your architecture, you will need `cmake`, `ninja`, and a C++17 compiler installed.*
 
 ## Quick Start
 
@@ -39,29 +35,55 @@ class Counter(Component):
         return Box(
             flex_direction="column",
             align_items="center",
-            justify_content="center",
-            border="single",
+            gap=1,
+            border="rounded",
+            padding=1,
             children=[
-                Text(f"Count: {count}", style={"bold": True}),
+                Text(f"Value: {count}", style={'bold': True, 'fg': 'cyan'}),
                 Button(
                     "Increment", 
-                    on_click=lambda _: set_count(count + 1)
+                    on_click=lambda _: set_count(count + 1),
+                    style={'hover_style': {'bg': 'green'}}
                 )
             ]
         )
 
 if __name__ == "__main__":
-    app = App(Counter)
-    app.run()
+    App(Counter).run()
 ```
+
+## Advanced Styling
+
+```python
+Text("Polished Text", style={
+    'fg': '#ff00ff',           # Hex colors
+    'italic': True,             # Rich attributes
+    'text_transform': 'uppercase',
+    'hover_style': {'fg': 'white', 'bold': True}
+})
+```
+
+## Platform Support
+
+| Platform | Support Status | Notes |
+| :--- | :--- | :--- |
+| **Linux** | ✅ Fully Supported | Primary development platform. |
+| **macOS** | ✅ Supported | Verified via CI/CD. |
+| **Windows** | ✅ Supported | Verified via CI/CD. Requires Windows 10+. |
 
 ## Documentation
 
-For detailed information, see the [docs](./docs) folder:
-- [Architecture](./docs/architecture.md)
-- [Component Reference](./docs/components.md)
+- [Architecture Reference](./docs/architecture.md)
+- [Component & Props API](./docs/components.md)
 - [Hooks API](./docs/hooks.md)
-- [Events & Input](./docs/events.md)
+- [Event System](./docs/events.md)
+
+## Examples
+
+Check out the [examples/](./examples) directory:
+- `counter.py`: Basic state management.
+- `styling_showcase.py`: Comprehensive styling engine demo.
+- `dashboard.py`: Layout and progress indicators.
 
 ## License
 
