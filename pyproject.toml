@@ -40,7 +40,7 @@ packages = ["rc_tui"]
 [tool.cibuildwheel]
 before-build = "pip install pybind11 cmake ninja"
 build-verbosity = 1
-skip = "cp36-* cp37-* cp38-* pp* *-win*"
+skip = "cp36-* cp37-* cp38-* pp*"
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 test-command = "pytest {project}/tests"
