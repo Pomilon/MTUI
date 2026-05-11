@@ -7,14 +7,19 @@ All `rc-tui` components share a set of common props for layout and styling.
 -   **`width` / `height`**: Absolute (e.g., `10`, `"20"`) or Percentage (e.g., `"50%"`, `"100%"`).
 -   **`margin` / `padding`**: Spacing around/inside the element.
 -   **`flex_direction`**: `"row"` (default) or `"column"`.
+-   **`gap`**: Numeric spacing between children in a flex container.
 -   **`justify_content`**: `"start"`, `"center"`, `"end"`, `"space-between"`, `"space-around"`.
 -   **`align_items`**: `"start"`, `"center"`, `"end"`.
 -   **`border`**: `"none"`, `"single"`, `"double"`, `"rounded"`.
--   **`style`**: A dictionary containing:
-    - `fg`: Foreground color (RGB tuple or ANSI color name).
+-   **`tooltip`**: Text to display in a floating overlay on hover.
+-   **`style`**: A dictionary (or list of dictionaries) containing:
+    - `fg`: Foreground color (RGB tuple, Hex string `#RRGGBB`, or Name e.g. `'red'`).
     - `bg`: Background color.
-    - `bold`: Boolean.
-    - `underline`: Boolean.
+    - `bold`, `italic`, `underline`, `strikethrough`: Booleans.
+    - `text_transform`: `"uppercase"`, `"lowercase"`, `"capitalize"`.
+    - `box_shadow`: Boolean (renders a dark offset behind the element).
+    - `hover_style`: Dictionary of styles applied when the mouse is over the element.
+    - `focus_style`: Dictionary of styles applied when the element is focused (e.g. via Tab).
 
 ---
 

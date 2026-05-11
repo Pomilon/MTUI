@@ -156,7 +156,7 @@ class App:
             
             # Draw windows from bottom to top
             for i, win in enumerate(self.windows):
-                if i > 0:
+                if i > 0 and win['element'].props.get('dim', True):
                     dim_style = tui_core.Style(15, 15, 15, 5, 5, 5, False)
                     # Use fill_rect which is clipped
                     self.canvas.fill_rect(0, 0, self.canvas.width, self.canvas.height, dim_style)
@@ -172,20 +172,23 @@ class App:
             # Draw Notifications
             self._render_notifications()
             
+            # Draw Tooltips
+            self._render_tooltip()
+            
             if self.renderer:
                 self.renderer.render(self.curr_buffer, self.next_buffer)
                 self.curr_buffer, self.next_buffer = self.next_buffer, self.curr_buffer
             
             self.needs_render = False
-            
             # Run pending effects after paint
             effects = self._pending_effects
             self._pending_effects = []
             for instance, idx in effects:
                 instance.run_effect(idx)
-                
         except Exception as e:
             self.log_error(f"Render Step Failure: {e}")
+        finally:
+            self.needs_render = False
 
     def _render_notifications(self):
         now = time.time()
@@ -209,6 +212,30 @@ class App:
             self.canvas.draw_rect(x, y, w, h, style, 2)
             self.canvas.draw_text(x + 2, y + 1, text, style)
             curr_y = y - margin
+
+    def _render_tooltip(self):
+        if not self.hovered_node:
+            return
+            
+        tooltip = self.hovered_node.props.get('tooltip')
+        if not tooltip:
+            return
+            
+        text = str(tooltip)
+        w = len(text) + 2
+        h = 1
+        x = self.mouse_x + 1
+        y = self.mouse_y + 1
+        
+        # Keep on screen
+        if x + w > self.canvas.width: x = self.mouse_x - w - 1
+        if y + h > self.canvas.height: y = self.mouse_y - h - 1
+        if x < 0: x = 0
+        if y < 0: y = 0
+        
+        style = tui_core.Style(0, 0, 0, 240, 240, 150, False)
+        self.canvas.fill_rect(x, y, w, h, style)
+        self.canvas.draw_text(x + 1, y, text, style)
 
     def stop(self):
         self._running = False
@@ -257,12 +284,16 @@ class App:
             self.mouse_x = event.x
             self.mouse_y = event.y
             target = self._hit_test(node, event.x, event.y)
-            self.hovered_node = target # Always update hovered node for inspector
             
             if event.type == 'MOVE':
-                self.request_render() # Hover effects
-                
-            elif event.type == 'CLICK':
+                if target != self.hovered_node:
+                    self.hovered_node = target
+                    self.request_render()
+                return # We don't need to do focus/click logic for MOVE
+            
+            self.hovered_node = target
+            
+            if event.type == 'CLICK':
                 focusable_types = ('input', 'button', 'checkbox', 'radiobutton', 'switch', 'select', 'tabselect', 'textarea')
                 new_focus = target if target and target.type in focusable_types else None
                 self._update_focus(node, new_focus)

@@ -33,8 +33,8 @@ jobs:
 
       - name: Smoke Test (Import)
         run: |
-          python -c "import rctui; print('MTUI Core Version:', rctui.__version__ if hasattr(rctui, '__version__') else '0.1.0')"
-          python -c "from rctui import App; print('App imported successfully')"
+          python -c "import rc_tui; print('MTUI Core Version:', rc_tui.__version__ if hasattr(rc_tui, '__version__') else '0.1.0')"
+          python -c "from rc_tui import App; print('App imported successfully')"
 
       - name: Run Logic Tests
         run: |

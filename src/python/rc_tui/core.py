@@ -1,3 +1,37 @@
+class StyleSheet:
+    @staticmethod
+    def create(styles):
+        """
+        Creates a StyleSheet object. Currently just returns the dict,
+        but can be expanded for validation or performance (pre-processing).
+        """
+        return styles
+
+def resolve_node_style(props):
+    """
+    Resolves the final style for a node by merging the 'style' prop 
+    (which can be a dict or list of dicts) with the rest of the props.
+    Props defined directly on the element take precedence.
+    """
+    style_prop = props.get('style', {})
+    
+    # Start with resolved style
+    resolved = {}
+    
+    if isinstance(style_prop, list):
+        for s in style_prop:
+            if isinstance(s, dict):
+                resolved.update(s)
+    elif isinstance(style_prop, dict):
+        resolved.update(style_prop)
+        
+    # Merge with inline props (inline takes precedence)
+    for k, v in props.items():
+        if k != 'children':
+            resolved[k] = v
+            
+    return resolved
+
 class Element:
     def __init__(self, type_, props, children=None):
         self.type = type_

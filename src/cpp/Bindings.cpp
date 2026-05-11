@@ -8,14 +8,21 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(_rctui_core, m) {
     py::class_<Style>(m, "Style")
-        .def(py::init<int, int, int, int, int, int, bool>())
+        .def(py::init<int, int, int, int, int, int, bool, bool, bool, bool>(),
+             py::arg("fg_r"), py::arg("fg_g"), py::arg("fg_b"),
+             py::arg("bg_r"), py::arg("bg_g"), py::arg("bg_b"),
+             py::arg("bold") = false, py::arg("italic") = false,
+             py::arg("underline") = false, py::arg("strikethrough") = false)
         .def_readwrite("fg_r", &Style::fg_r)
         .def_readwrite("fg_g", &Style::fg_g)
         .def_readwrite("fg_b", &Style::fg_b)
         .def_readwrite("bg_r", &Style::bg_r)
         .def_readwrite("bg_g", &Style::bg_g)
         .def_readwrite("bg_b", &Style::bg_b)
-        .def_readwrite("bold", &Style::bold);
+        .def_readwrite("bold", &Style::bold)
+        .def_readwrite("italic", &Style::italic)
+        .def_readwrite("underline", &Style::underline)
+        .def_readwrite("strikethrough", &Style::strikethrough);
 
     py::class_<Cell>(m, "Cell")
         .def(py::init<std::string, Style>())

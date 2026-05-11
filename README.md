@@ -6,18 +6,18 @@
 
 -   **Declarative UI**: Build interfaces using components, props, and state, just like React.
 -   **High-Performance Engine**: Core rendering, terminal management, and diffing logic implemented in C++ for maximum speed.
--   **Built-in Layout Engine**: Flexbox-like layout system for easy positioning and responsiveness.
+-   **Advanced Styling**: Web-like styling with Hex colors, pseudo-classes (`hover_style`, `focus_style`), inheritance, and text effects (italic, underline, etc.).
+-   **Full Mouse Support**: Support for clicking, scrolling, and **real-time motion tracking** for hover effects and tooltips.
+-   **Built-in Layout Engine**: Flexbox-like layout system with support for `gap`, `flex_grow`, and percentage dimensions.
 -   **Rich Component Library**: Includes Box, Text, Button, Input, ScrollBox, Markdown, Code, Tables, and more.
--   **Hooks System**: `useState`, `useEffect`, `useMemo`, and `useCallback` for clean state management.
--   **Mouse Support**: Full support for clicking, scrolling, and move events.
 
 ## Platform Support
 
 | Platform | Support Status | Notes |
 | :--- | :--- | :--- |
 | **Linux** | ✅ Fully Supported | Primary development and testing platform. |
-| **macOS** | ⚠️ Build Only | Wheels are provided, but functionality is currently untested. |
-| **Windows** | ❌ Not Supported | CI/CD and PyPI publishing are disabled. Local builds may work but are not officially supported. |
+| **macOS** | ✅ Supported | Verified via CI/CD (GitHub Actions). |
+| **Windows** | ✅ Supported | Verified via CI/CD (GitHub Actions). Requires Windows 10+. |
 
 ## Installation
 
@@ -30,7 +30,7 @@ pip install rc-tui
 ## Quick Start
 
 ```python
-from rctui import App, Component, Box, Text, Button, useState
+from rc_tui import App, Component, Box, Text, Button, useState
 
 class Counter(Component):
     def render(self):

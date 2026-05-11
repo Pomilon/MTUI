@@ -5,49 +5,92 @@ import time
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
 
-def resolve_style(props, parent_style=None):
+COLOR_NAMES = {
+    'red': (255, 0, 0),
+    'green': (0, 255, 0),
+    'blue': (0, 0, 255),
+    'white': (255, 255, 255),
+    'black': (0, 0, 0),
+    'yellow': (255, 255, 0),
+    'cyan': (0, 255, 255),
+    'magenta': (255, 0, 255),
+    'gray': (128, 128, 128),
+    'grey': (128, 128, 128),
+    'orange': (255, 165, 0),
+    'purple': (128, 0, 128),
+    'pink': (255, 192, 203),
+}
+
+def parse_color(c, default):
+    if isinstance(c, (list, tuple)) and len(c) == 3:
+        return c
+    if isinstance(c, str):
+        c = c.lower()
+        if c in COLOR_NAMES:
+            return COLOR_NAMES[c]
+        if c.startswith('#'):
+            try:
+                if len(c) == 7:
+                    return (int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16))
+                if len(c) == 4:
+                    r = int(c[1], 16); g = int(c[2], 16); b = int(c[3], 16)
+                    return (r * 17, g * 17, b * 17)
+            except ValueError:
+                pass
+    return default
+
+def resolve_style(node, canvas, parent_style=None):
+    props = node.props.copy()
+    
+    # Apply pseudo-classes (Focus takes precedence over Hover)
+    if canvas.app and node == canvas.app.hovered_node and 'hover_style' in props:
+        hover = props['hover_style']
+        if isinstance(hover, dict):
+            props.update(hover)
+            
+    if node.is_focused and 'focus_style' in props:
+        focus = props['focus_style']
+        if isinstance(focus, dict):
+            props.update(focus)
+
     # Default fallback values
     d_fg = (255, 255, 255)
     d_bg = (0, 0, 0)
     d_bold = False
+    d_italic = False
+    d_underline = False
+    d_strikethrough = False
     
     # Inherit from parent if available
     if parent_style:
         d_fg = (parent_style.fg_r, parent_style.fg_g, parent_style.fg_b)
         d_bg = (parent_style.bg_r, parent_style.bg_g, parent_style.bg_b)
         d_bold = parent_style.bold
+        d_italic = parent_style.italic
+        d_underline = parent_style.underline
+        d_strikethrough = parent_style.strikethrough
 
-    # Check for a 'style' dictionary prop
-    style_dict = props.get('style', {})
-    
-    # Override with current props or style_dict
-    fg = props.get('fg', style_dict.get('fg', d_fg))
-    bg = props.get('bg', style_dict.get('bg', d_bg))
-    bold = props.get('bold', style_dict.get('bold', d_bold))
+    fg = parse_color(props.get('fg'), d_fg)
+    bg = parse_color(props.get('bg'), d_bg)
+    bold = props.get('bold', d_bold)
+    italic = props.get('italic', d_italic)
+    underline = props.get('underline', d_underline)
+    strikethrough = props.get('strikethrough', d_strikethrough)
 
-    # Handle individual components if provided
-    fg_r = props.get('fg_r', style_dict.get('fg_r', fg[0] if isinstance(fg, (list, tuple)) else 255))
-    fg_g = props.get('fg_g', style_dict.get('fg_g', fg[1] if isinstance(fg, (list, tuple)) else 255))
-    fg_b = props.get('fg_b', style_dict.get('fg_b', fg[2] if isinstance(fg, (list, tuple)) else 255))
-    
-    bg_r = props.get('bg_r', style_dict.get('bg_r', bg[0] if isinstance(bg, (list, tuple)) else 0))
-    bg_g = props.get('bg_g', style_dict.get('bg_g', bg[1] if isinstance(bg, (list, tuple)) else 0))
-    bg_b = props.get('bg_b', style_dict.get('bg_b', bg[2] if isinstance(bg, (list, tuple)) else 0))
-
-    return tui_core.Style(int(fg_r), int(fg_g), int(fg_b), int(bg_r), int(bg_g), int(bg_b), bool(bold))
+    return tui_core.Style(
+        int(fg[0]), int(fg[1]), int(fg[2]), 
+        int(bg[0]), int(bg[1]), int(bg[2]), 
+        bool(bold), bool(italic), bool(underline), bool(strikethrough)
+    )
 
 def resolve_border_style(props, main_style):
     d_bfg = (main_style.fg_r, main_style.fg_g, main_style.fg_b)
     d_bbg = (main_style.bg_r, main_style.bg_g, main_style.bg_b)
     
-    bfg = props.get('border_fg', d_bfg)
-    bbg = props.get('border_bg', d_bbg)
+    bfg = parse_color(props.get('border_fg'), d_bfg)
+    bbg = parse_color(props.get('border_bg'), d_bbg)
     
-    # Simple normalization
-    if not isinstance(bfg, (list, tuple)) or len(bfg) != 3: bfg = d_bfg
-    if not isinstance(bbg, (list, tuple)) or len(bbg) != 3: bbg = d_bbg
-    
-    return tui_core.Style(int(bfg[0]), int(bfg[1]), int(bfg[2]), int(bbg[0]), int(bbg[1]), int(bbg[2]), False)
+    return tui_core.Style(int(bfg[0]), int(bfg[1]), int(bfg[2]), int(bbg[0]), int(bbg[1]), int(bbg[2]), False, False, False, False)
 
 def draw_tree(node, canvas, parent_style=None):
     if not node: return
@@ -58,15 +101,25 @@ def draw_tree(node, canvas, parent_style=None):
        node.screen_y >= cy + ch or node.screen_y + node.h <= cy:
         return
 
-    style = resolve_style(node.props, parent_style)
+    style = resolve_style(node, canvas, parent_style)
     
     # Fill background for containers
     if node.type in ('box', 'scrollbox', 'input', 'textarea', 'modal', 'dialog', 'code', 'asciifont', 'markdown'):
+        # Box Shadow
+        if node.props.get('box_shadow'):
+            shadow_style = tui_core.Style(0, 0, 0, 15, 15, 15, False, False, False, False)
+            canvas.fill_rect(node.screen_x + 1, node.screen_y + 1, node.w, node.h, shadow_style)
+
         # If the box has a border_bg but no bg, use border_bg as the fill color.
         fill_style = style
         if 'border_bg' in node.props and 'bg' not in node.props:
-            bbg = node.props['border_bg']
-            fill_style = tui_core.Style(style.fg_r, style.fg_g, style.fg_b, int(bbg[0]), int(bbg[1]), int(bbg[2]), style.bold)
+            bbg_raw = node.props['border_bg']
+            bbg = parse_color(bbg_raw, (style.bg_r, style.bg_g, style.bg_b))
+            fill_style = tui_core.Style(
+                style.fg_r, style.fg_g, style.fg_b, 
+                int(bbg[0]), int(bbg[1]), int(bbg[2]), 
+                style.bold, style.italic, style.underline, style.strikethrough
+            )
         
         canvas.fill_rect(node.screen_x, node.screen_y, node.w, node.h, fill_style)
         
@@ -84,6 +137,13 @@ def draw_tree(node, canvas, parent_style=None):
 
     if node.type == 'text' or node.type == 'span':
         text = str(node.props.get('text', ''))
+        
+        # Text Transformation
+        tt = node.props.get('text_transform')
+        if tt == 'uppercase': text = text.upper()
+        elif tt == 'lowercase': text = text.lower()
+        elif tt == 'capitalize': text = text.capitalize()
+
         lines = text.split('\n')
         for i, line in enumerate(lines):
             if node.screen_y + i < node.screen_y + node.h:
@@ -96,7 +156,7 @@ def draw_tree(node, canvas, parent_style=None):
         for i, opt in enumerate(options):
             is_sel = (i == selected_idx)
             text = f" {opt} "
-            tab_style = resolve_style(node.props, parent_style)
+            tab_style = resolve_style(node, canvas, parent_style)
             if is_sel:
                 tab_style.bg_r, tab_style.bg_g, tab_style.bg_b = 60, 60, 80
                 tab_style.bold = True
@@ -196,7 +256,7 @@ def draw_tree(node, canvas, parent_style=None):
         content = str(node.props.get('content', ''))
         lines = content.split('\n')
         for i, line in enumerate(lines[:node.h]):
-            line_style = resolve_style(node.props, parent_style)
+            line_style = resolve_style(node, canvas, parent_style)
             if line.startswith('+'):
                 line_style.fg_r, line_style.fg_g, line_style.fg_b = 100, 255, 100
             elif line.startswith('-'):
@@ -222,7 +282,7 @@ def draw_tree(node, canvas, parent_style=None):
 
     if node.type == 'linenumber':
         count = node.props.get('count', 0)
-        num_style = resolve_style(node.props, parent_style)
+        num_style = resolve_style(node, canvas, parent_style)
         num_style.fg_r = num_style.fg_g = num_style.fg_b = 100
         for i in range(node.h):
             canvas.draw_text(node.screen_x, node.screen_y + i, str(i+1).rjust(node.w-1), num_style)
@@ -231,7 +291,7 @@ def draw_tree(node, canvas, parent_style=None):
         label = str(node.props.get('label', ''))
         selected = node.props.get('selected', False)
         icon = "◉" if selected else "○"
-        rb_style = resolve_style(node.props, parent_style)
+        rb_style = resolve_style(node, canvas, parent_style)
         if node.is_focused:
             rb_style.fg_r, rb_style.fg_g, rb_style.fg_b = 0, 255, 255
         canvas.draw_text(node.screen_x, node.screen_y, f"{icon} {label}"[:node.w], rb_style)
@@ -240,7 +300,7 @@ def draw_tree(node, canvas, parent_style=None):
         label = str(node.props.get('label', ''))
         on = node.props.get('on', False)
         sw_text = "[ON ]" if on else "[OFF]"
-        sw_style = resolve_style(node.props, parent_style)
+        sw_style = resolve_style(node, canvas, parent_style)
         
         state_style = tui_core.Style(sw_style.fg_r, sw_style.fg_g, sw_style.fg_b, sw_style.bg_r, sw_style.bg_g, sw_style.bg_b, sw_style.bold)
         if on:
@@ -260,7 +320,7 @@ def draw_tree(node, canvas, parent_style=None):
 
     if node.type == 'button':
         text = str(node.props.get('text', ''))
-        btn_style = resolve_style(node.props, parent_style)
+        btn_style = resolve_style(node, canvas, parent_style)
         if node.is_focused:
             btn_style.bg_r, btn_style.bg_g, btn_style.bg_b = 0, 100, 100
         canvas.fill_rect(node.screen_x, node.screen_y, node.w, node.h, btn_style)
@@ -271,14 +331,14 @@ def draw_tree(node, canvas, parent_style=None):
         label = str(node.props.get('label', ''))
         checked = node.props.get('checked', False)
         box = "[x]" if checked else "[ ]"
-        check_style = resolve_style(node.props, parent_style)
+        check_style = resolve_style(node, canvas, parent_style)
         if node.is_focused:
             check_style.fg_r, check_style.fg_g, check_style.fg_b = 0, 255, 255
         canvas.draw_text(node.screen_x, node.screen_y, f"{box} {label}"[:node.w], check_style)
 
     if node.type == 'progressbar':
         progress = max(0.0, min(1.0, node.props.get('progress', 0.0)))
-        bar_style = resolve_style(node.props, parent_style)
+        bar_style = resolve_style(node, canvas, parent_style)
         
         width = node.w
         if width < 3:
@@ -299,7 +359,7 @@ def draw_tree(node, canvas, parent_style=None):
         val = node.props.get('value', '')
         ph = node.props.get('placeholder', 'Type here...')
         display = val if val else ph
-        input_style = resolve_style(node.props, parent_style)
+        input_style = resolve_style(node, canvas, parent_style)
         if node.is_focused:
             input_style.fg_r, input_style.fg_g, input_style.fg_b = 0, 255, 255
         off = 1 if node.props.get('border') else 0
@@ -329,14 +389,14 @@ def draw_tree(node, canvas, parent_style=None):
     # Draw scrollbars for ScrollBox
     if node.type == 'scrollbox':
         if node.content_h > node.h:
-            track_style = resolve_style(node.props, parent_style)
+            track_style = resolve_style(node, canvas, parent_style)
             tr, tg, tb = track_style.bg_r, track_style.bg_g, track_style.bg_b
             track_style.fg_r, track_style.fg_g, track_style.fg_b = min(255, tr+20), min(255, tg+20), min(255, tb+20)
             for j in range(node.h):
                 canvas.set_cell(node.screen_x + node.w - 1, node.screen_y + j, '▒', track_style)
             thumb_h = max(1, int(node.h * (node.h / node.content_h)))
             thumb_y = int(node.scroll_y * (node.h / node.content_h))
-            thumb_style = resolve_style(node.props, parent_style)
+            thumb_style = resolve_style(node, canvas, parent_style)
             thumb_style.fg_r, thumb_style.fg_g, thumb_style.fg_b = 0, 255, 255
             for j in range(thumb_h):
                 canvas.set_cell(node.screen_x + node.w - 1, node.screen_y + thumb_y + j, '█', thumb_style)

@@ -5,5 +5,5 @@ include pyproject.toml
 include setup.py
 recursive-include src/cpp *.cpp *.hpp
 recursive-include src/python *.py
-recursive-include src/python/rctui *.py
-include src/python/rctui/py.typed
+recursive-include src/python/rc_tui *.py
+include src/python/rc_tui/py.typed

@@ -31,6 +31,10 @@ public:
     void setCursorPosition(int x, int y);
     void setForegroundColor(int r, int g, int b);
     void setBackgroundColor(int r, int g, int b);
+    void setBold(bool enable);
+    void setItalic(bool enable);
+    void setUnderline(bool enable);
+    void setStrikethrough(bool enable);
     void resetColors();
     
     void write(const std::string& text);

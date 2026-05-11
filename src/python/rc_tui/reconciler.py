@@ -1,10 +1,10 @@
-from .core import Element, Component
+from .core import Element, Component, resolve_node_style
 
 class LayoutNode:
     def __init__(self, element):
         self.element = element
         self.type = element.type
-        self.props = element.props
+        self.props = resolve_node_style(element.props)
         self.children = []
         self.parent = None
         self.component = None
@@ -72,6 +72,11 @@ class FunctionalComponentInstance:
                     pass
 
 def build_tree(element, app, old_node=None):
+    if element is None:
+        if old_node:
+            _unmount_node(old_node)
+        return None
+        
     # Handle Component classes
     if isinstance(element.type, type) and issubclass(element.type, Component):
         if old_node and old_node.component and type(old_node.component) == element.type:
@@ -132,7 +137,7 @@ def build_tree(element, app, old_node=None):
         
         new_children = []
         for i, child_el in enumerate(element.children):
-            key = child_el.props.get('key')
+            key = child_el.props.get('key') if child_el is not None else None
             target_old_child = None
             
             if key is not None:
@@ -142,8 +147,9 @@ def build_tree(element, app, old_node=None):
                 target_old_child = old_children_ordered.pop(0)
             
             child_node = build_tree(child_el, app, target_old_child)
-            child_node.parent = node
-            new_children.append(child_node)
+            if child_node:
+                child_node.parent = node
+                new_children.append(child_node)
             
         # Unmount remaining old children
         for child in old_children_by_key.values():

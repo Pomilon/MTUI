@@ -1,11 +1,36 @@
 import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/python')))
 
-from rctui import (
+from rc_tui import (
     App, Component, Element, Text, Box, Input, ScrollBox, Button, Checkbox, 
     ProgressBar, Divider, Dialog, Modal, Switch, Dropdown, Markdown, Code, 
     Textarea, AsciiFont, Toast, TabSelect, Span,
-    useState, useEffect, VirtualList, Table
+    useState, useEffect, VirtualList, Table, StyleSheet
 )
+
+styles = StyleSheet.create({
+    'header': {
+        'height': 3,
+        'bg': (30, 30, 40),
+        'padding': 1,
+        'flex_direction': "row"
+    },
+    'sidebar': {
+        'width': 30,
+        'padding': 1,
+        'bg': (25, 25, 25),
+        'border': True,
+        'title': "Navigation"
+    },
+    'content': {
+        'flex_grow': 1,
+        'padding': 1,
+        'bg': (30, 30, 30),
+        'border': True,
+        'title': "Configuration"
+    }
+})
+
 def MyFunctionalComponent(props):
     count, set_count = useState(0)
     progress, set_progress = useState(0)
@@ -61,10 +86,7 @@ class DemoApp(Component):
             children=[
                 # Header
                 Box(
-                    height=3,
-                    bg=(30, 30, 40),
-                    padding=1,
-                    flex_direction="row",
+                    style=styles['header'],
                     children=[
                         Text(" 🚀 RC-TUI Windowed Demo ", fg=(0, 255, 128), bold=True),
                         Box(width=2),
@@ -90,11 +112,7 @@ class DemoApp(Component):
                     children=[
                         # Left Sidebar
                         Box(
-                            width=30,
-                            padding=1,
-                            bg=(25, 25, 25),
-                            border=True,
-                            title="Navigation",
+                            style=styles['sidebar'],
                             children=[
                                 Text("Shortcut keys:", fg=(200, 200, 200), bold=True),
                                 Text(" [TAB]   Cycle Focus", fg=(150, 150, 150)),
@@ -134,11 +152,7 @@ class DemoApp(Component):
                         ),
                         # Center Form
                         Box(
-                            flex_grow=1,
-                            padding=1,
-                            bg=(30, 30, 30),
-                            border=True,
-                            title="Configuration",
+                            style=styles['content'],
                             children=[
                                 Text("IDENTITY", fg=(0, 188, 212), bold=True),
                                 Box(height=1),
@@ -372,7 +386,7 @@ class StylingDemo(Component):
             ]
         )
 def main():
-    app = App(DemoApp, debug_file="rctui.log")
+    app = App(DemoApp, debug_file="rc_tui.log")
     app.run()
 if __name__ == "__main__":
     main()

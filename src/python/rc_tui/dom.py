@@ -141,6 +141,48 @@ def Toast(text, duration=3.0, **kwargs):
     kwargs['duration'] = duration
     return Element('toast', kwargs)
 
+def Accordion(title, children, expanded=False, on_toggle=None, **kwargs):
+    return Box(flex_direction='column', **kwargs, children=[
+        Button(
+            text=f"{'▼' if expanded else '▶'} {title}",
+            on_click=lambda: on_toggle(not expanded) if on_toggle else None,
+            width="100%",
+            bg=(40, 40, 50)
+        ),
+        Box(
+            children=children if expanded else []
+        )
+    ])
+
+class SliderClass(Component):
+    def render(self):
+        val = self.props.get('value', 0)
+        mn = self.props.get('min', 0)
+        mx = self.props.get('max', 100)
+        w = self.props.get('width', 20)
+        
+        progress = (val - mn) / (mx - mn) if mx != mn else 0
+        inner_w = max(1, w - 2)
+        filled = max(0, min(inner_w, int(progress * inner_w)))
+        
+        def on_click(event):
+            node = self._root_node
+            if not node: return
+            rel_x = event.x - (node.screen_x + 1)
+            new_prog = max(0, min(1, rel_x / inner_w))
+            new_val = mn + new_prog * (mx - mn)
+            if self.props.get('on_change'):
+                self.props['on_change'](new_val)
+
+        bar = "=" * filled + "O" + "-" * (inner_w - filled - 1)
+        return Box(
+            width=w, height=1, on_click=on_click,
+            children=[Text(f"[{bar[:inner_w]}]")]
+        )
+
+def Slider(**kwargs):
+    return Element(SliderClass, kwargs)
+
 def Timeline(**kwargs):
     return Element('timeline', kwargs)
 

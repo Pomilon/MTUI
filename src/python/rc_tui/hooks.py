@@ -90,3 +90,20 @@ def useRef(initial_val):
         instance._hooks.append({"type": "ref", "value": initial_val})
         
     return instance._hooks[idx]
+
+def useWindowSize():
+    global _hook_index
+    instance = _current_instance
+    idx = _hook_index
+    _hook_index += 1
+    
+    app = instance.app
+    w, h = app.terminal.get_size()
+    
+    if idx >= len(instance._hooks):
+        instance._hooks.append({"type": "window_size", "value": (w, h)})
+        
+    hook = instance._hooks[idx]
+    hook["value"] = (w, h)
+    
+    return hook["value"]

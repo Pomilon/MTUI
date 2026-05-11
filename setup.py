@@ -49,8 +49,12 @@ class CMakeBuild(build_ext):
             cmake_args += ['-GNinja']
         
         if platform.system() == "Windows":
-            cmake_args += [f'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}']
-            cmake_args += [f'-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}']
+            # On Windows, we need to ensure the DLL/PYD ends up in the right place
+            # even if CMake uses a multi-config generator (like VS)
+            for config_type in ['Debug', 'Release', 'RelWithDebInfo', 'MinSizeRel']:
+                cmake_args += [f'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{config_type.upper()}={extdir}']
+                cmake_args += [f'-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{config_type.upper()}={extdir}']
+            
             if sys.maxsize > 2**32 and not shutil.which('ninja'):
                 cmake_args += ['-A', 'x64']
         elif platform.system() == "Darwin":
@@ -87,10 +91,21 @@ class CMakeBuild(build_ext):
         print(f"Building with: {cmake_bin} --build . {' '.join(build_args)}")
         subprocess.check_call([cmake_bin, '--build', '.'] + build_args, cwd=self.build_temp)
 
+        # On Windows, editable installs might not find the .pyd if it's buried in build/
+        # Copy it back to the source directory
+        if platform.system() == "Windows":
+            import glob
+            # Look for the .pyd in the temp build dir
+            for pyd in glob.glob(os.path.join(self.build_temp, "**", "*.pyd"), recursive=True):
+                dest = os.path.join(extdir, os.path.basename(pyd))
+                if os.path.abspath(pyd) != os.path.abspath(dest):
+                    print(f"Copying {pyd} to {dest}")
+                    shutil.copy(pyd, dest)
+
 setup(
     packages=find_packages('src/python'),
     package_dir={'': 'src/python'},
-    ext_modules=[CMakeExtension('rctui._rctui_core')],
+    ext_modules=[CMakeExtension('rc_tui._rctui_core')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
 )

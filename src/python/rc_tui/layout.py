@@ -179,12 +179,17 @@ def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_scre
     inner_h = node.h - pt - pb
     
     flex_dir = node.props.get('flex_direction', 'column')
+    gap = node.props.get('gap', 0)
     
     flex_total = 0
     fixed_space = 0
     
     child_measures = []
-    for child in node.children:
+    non_null_children = [c for c in node.children if c is not None]
+    gap_count = max(0, len(non_null_children) - 1)
+    fixed_space += gap_count * gap
+
+    for child in non_null_children:
         grow = child.props.get('flex_grow', 0)
         if grow > 0:
             flex_total += grow
@@ -202,7 +207,7 @@ def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_scre
     current_x = pl
     current_y = pt
     
-    for child, cw, ch, grow in child_measures:
+    for i, (child, cw, ch, grow) in enumerate(child_measures):
         if grow > 0:
             share = int(remaining_space * (grow / flex_total)) if flex_total > 0 else 0
             if flex_dir == 'column':
@@ -223,6 +228,6 @@ def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_scre
         do_layout(child, current_x, current_y, cw, ch, node.screen_x - scroll_off_x, node.screen_y - scroll_off_y)
         
         if flex_dir == 'column':
-            current_y += ch
+            current_y += ch + gap
         else:
-            current_x += cw
+            current_x += cw + gap

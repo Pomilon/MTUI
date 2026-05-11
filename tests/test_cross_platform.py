@@ -10,13 +10,13 @@ sys.modules['msvcrt'] = mock_msvcrt
 # Mock APPDATA for pyfiglet
 os.environ['APPDATA'] = '/tmp'
 
-from rctui.input import InputManager
-from rctui.events import KeyEvent
+from rc_tui.input import InputManager
+from rc_tui.events import KeyEvent
 
 class TestCrossPlatformInput(unittest.TestCase):
     def test_windows_arrow_keys(self):
         """Test that Windows scan codes are correctly mapped to ANSI sequences."""
-        with patch('rctui.input._get_platform', return_value='win32'):
+        with patch('rc_tui.input._get_platform', return_value='win32'):
             input_manager = InputManager()
             # Simulate pressing UP arrow on Windows: '\xe0' followed by 'H'
             mock_msvcrt.kbhit.side_effect = [True, True, False]
@@ -28,7 +28,7 @@ class TestCrossPlatformInput(unittest.TestCase):
 
     def test_windows_enter_key(self):
         """Test that Windows \r is mapped to \n."""
-        with patch('rctui.input._get_platform', return_value='win32'):
+        with patch('rc_tui.input._get_platform', return_value='win32'):
             input_manager = InputManager()
             mock_msvcrt.kbhit.side_effect = [True, False]
             mock_msvcrt.getwch.side_effect = ['\r']
@@ -39,7 +39,7 @@ class TestCrossPlatformInput(unittest.TestCase):
 
     def test_linux_ansi_parsing(self):
         """Test that Linux/Unix ANSI parsing remains intact."""
-        with patch('rctui.input._get_platform', return_value='linux'):
+        with patch('rc_tui.input._get_platform', return_value='linux'):
             input_manager = InputManager()
             # Simulate ANSI escape for LEFT arrow
             with patch('os.read') as mock_read:

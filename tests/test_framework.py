@@ -1,9 +1,9 @@
 import sys, os
 import unittest
 from typing import List, Tuple
-from rctui import tui_core
-from rctui import App, Component, Text, Box, Input, ScrollBox, Element
-from rctui.events import KeyEvent, MouseEvent
+from rc_tui import tui_core
+from rc_tui import App, Component, Text, Box, Input, ScrollBox, Element
+from rc_tui.events import KeyEvent, MouseEvent
 
 class MockTerminal:
     def __init__(self, w=80, h=24):
@@ -31,7 +31,7 @@ class MockApp(App):
         
         self.curr_buffer = tui_core.Buffer(w, h)
         self.next_buffer = tui_core.Buffer(w, h)
-        from rctui.canvas import Canvas
+        from rc_tui.canvas import Canvas
         self.canvas = Canvas(self.next_buffer)
         self.canvas.app = self
 

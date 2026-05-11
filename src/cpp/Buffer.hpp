@@ -8,11 +8,15 @@ struct Style {
     int fg_r, fg_g, fg_b;
     int bg_r, bg_g, bg_b;
     bool bold = false;
+    bool italic = false;
+    bool underline = false;
+    bool strikethrough = false;
 
     bool operator==(const Style& other) const {
         return fg_r == other.fg_r && fg_g == other.fg_g && fg_b == other.fg_b &&
                bg_r == other.bg_r && bg_g == other.bg_g && bg_b == other.bg_b &&
-               bold == other.bold;
+               bold == other.bold && italic == other.italic &&
+               underline == other.underline && strikethrough == other.strikethrough;
     }
     bool operator!=(const Style& other) const { return !(*this == other); }
 };

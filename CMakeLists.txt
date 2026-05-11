@@ -19,6 +19,7 @@ endif()
 # On Windows, link the C++ runtime statically to avoid "DLL not found" issues in CI
 if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    add_compile_options(/MT) # Explicitly force static runtime
 endif()
 
 # Discovery of pybind11
@@ -47,17 +48,17 @@ if(NOT pybind11_FOUND)
 endif()
 
 # Use the standard pybind11 module helper
-pybind11_add_module(tui_core 
+pybind11_add_module(_rctui_core 
     src/cpp/Terminal.cpp 
     src/cpp/Buffer.cpp 
     src/cpp/Renderer.cpp 
     src/cpp/Bindings.cpp
 )
 
-# Ensure the output name is exactly what the Python code expects
-set_target_properties(tui_core PROPERTIES 
-    OUTPUT_NAME "_rctui_core"
-)
+if(MSVC)
+    # Standard static runtime linking
+    set_property(TARGET _rctui_core PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # Respect output directories set by setup.py
 if(CMAKE_LIBRARY_OUTPUT_DIRECTORY)

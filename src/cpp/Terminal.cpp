@@ -78,11 +78,11 @@ void Terminal::exitAlternateScreen() {
 }
 
 void Terminal::enableMouseTracking() {
-    write("\x1b[?1000h\x1b[?1006h"); // Enable mouse tracking and SGR mode
+    write("\x1b[?1003h\x1b[?1006h"); // Enable all mouse motion tracking and SGR mode
 }
 
 void Terminal::disableMouseTracking() {
-    write("\x1b[?1000l\x1b[?1006l");
+    write("\x1b[?1003l\x1b[?1006l");
 }
 
 void Terminal::clearScreen() {
@@ -99,6 +99,22 @@ void Terminal::setForegroundColor(int r, int g, int b) {
 
 void Terminal::setBackgroundColor(int r, int g, int b) {
     write("\x1b[48;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m");
+}
+
+void Terminal::setBold(bool enable) {
+    write(enable ? "\x1b[1m" : "\x1b[22m");
+}
+
+void Terminal::setItalic(bool enable) {
+    write(enable ? "\x1b[3m" : "\x1b[23m");
+}
+
+void Terminal::setUnderline(bool enable) {
+    write(enable ? "\x1b[4m" : "\x1b[24m");
+}
+
+void Terminal::setStrikethrough(bool enable) {
+    write(enable ? "\x1b[9m" : "\x1b[29m");
 }
 
 void Terminal::resetColors() {

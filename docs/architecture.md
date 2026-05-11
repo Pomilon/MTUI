@@ -4,7 +4,7 @@
 
 ## Core Components
 
-### 1. Python Frontend (`src/python/rctui`)
+### 1. Python Frontend (`src/python/rc_tui`)
 The Python layer provides the React-inspired programming model:
 - **Reconciler**: Manages the component tree and decides which parts of the UI need to be updated based on state changes.
 - **Hooks**: Implements `useState`, `useEffect`, etc., maintaining state across renders.
