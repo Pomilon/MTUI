@@ -2,8 +2,11 @@ name: Publish to PyPI
 
 on:
   push:
+    branches: [ main, platform-support ]
     tags:
       - 'v*'
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build_wheels:
