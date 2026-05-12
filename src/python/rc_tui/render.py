@@ -42,8 +42,18 @@ def parse_color(c, default):
 def resolve_style(node, canvas, parent_style=None):
     props = node.props.copy()
     
+    # Check if this node or any of its descendants are hovered
+    is_hovered = False
+    if canvas.app and canvas.app.hovered_node:
+        curr = canvas.app.hovered_node
+        while curr:
+            if curr == node:
+                is_hovered = True
+                break
+            curr = curr.parent
+
     # Apply pseudo-classes (Focus takes precedence over Hover)
-    if canvas.app and node == canvas.app.hovered_node and 'hover_style' in props:
+    if is_hovered and 'hover_style' in props:
         hover = props['hover_style']
         if isinstance(hover, dict):
             props.update(hover)

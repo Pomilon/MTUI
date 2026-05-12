@@ -35,9 +35,19 @@ class InputManager:
         try:
             if self.platform == "win32":
                 import msvcrt
-                # Windows implementation using msvcrt
+                # Windows implementation: combine msvcrt for keys and direct read for ANSI sequences
                 while msvcrt.kbhit():
                     char = msvcrt.getwch()
+                    
+                    # If we see an ESC, it might be the start of a mouse/VT sequence
+                    if char == '\x1b':
+                        self._buffer += char
+                        # Try to read the rest of the sequence from stdin if available
+                        import msvcrt
+                        while msvcrt.kbhit():
+                            self._buffer += msvcrt.getwch()
+                        continue
+
                     # msvcrt.getwch() returns some special keys as '\x00' or '\xe0' followed by another char
                     if char in ('\x00', '\xe0'):
                         if msvcrt.kbhit():

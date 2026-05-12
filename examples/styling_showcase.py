@@ -8,7 +8,8 @@ styles = StyleSheet.create({
         'margin': 1,
         'width': 40,
         'box_shadow': True,
-        'bg': '#1e1e1e'
+        'bg': '#1e1e1e',
+        'hover_style': {'bg': '#2d2d2d', 'fg': 'white'}
     },
     'header': {
         'bold': True,

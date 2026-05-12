@@ -214,10 +214,14 @@ class App:
             curr_y = y - margin
 
     def _render_tooltip(self):
-        if not self.hovered_node:
-            return
+        curr = self.hovered_node
+        tooltip = None
+        while curr:
+            tooltip = curr.props.get('tooltip')
+            if tooltip:
+                break
+            curr = curr.parent
             
-        tooltip = self.hovered_node.props.get('tooltip')
         if not tooltip:
             return
             
