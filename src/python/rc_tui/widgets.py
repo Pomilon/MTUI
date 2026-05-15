@@ -636,8 +636,7 @@ register('markdown', measure=_measure_markdown)
 register('linenumber', measure=_measure_linenumber)
 register('asciifont', measure=_measure_asciifont)
 register('toast', measure=_measure_toast)
-register('dialog', measure=_measure_dialog)
-register('modal', measure=_measure_modal)
+
 
 register('text', draw=_draw_text)
 register('span', draw=_draw_text)
