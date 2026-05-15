@@ -80,11 +80,11 @@ def measure(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
     if w_prop is not None:
-        w = max(measured_w, parse_dim(w_prop, max_w) - pl - pr - ml - mr)
+        w = max(0, parse_dim(w_prop, max_w) - pl - pr - ml - mr)
     else:
         w = measured_w
     if h_prop is not None:
-        h = max(measured_h, parse_dim(h_prop, max_h) - pt - pb - mt - mb)
+        h = max(0, parse_dim(h_prop, max_h) - pt - pb - mt - mb)
     else:
         h = measured_h
     return w, h
