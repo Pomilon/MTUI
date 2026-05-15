@@ -40,7 +40,7 @@ class Counter(Component):
 
 ## `useEffect`
 
-Runs side effects after the render is committed to the screen. Matches React's `useEffect` semantics.
+Runs side effects after the render is committed to the screen. Matches React's `useEffect` semantics. Calling `request_render()` inside an effect properly triggers the next frame.
 
 ```python
 useEffect(callback, dependencies)
@@ -61,7 +61,7 @@ def start_timer():
 useEffect(start_timer, [])
 ```
 
-Cleanups run before the next effect run or on unmount.
+Cleanups run before the next effect run or on unmount. Effects are deduplicated — running the same effect multiple times before the frame flush only queues it once.
 
 ---
 

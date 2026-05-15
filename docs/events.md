@@ -97,6 +97,7 @@ class MouseEvent:
 | `Checkbox` | Toggles `checked` and calls `on_change` |
 | `RadioButton` | Sets `selected=True` |
 | `Switch` | Toggles `on` and calls `on_change` |
+| `ScrollBox` | Click on scrollbar column jumps to that scroll position |
 
 ## The Top-Window Rule
 

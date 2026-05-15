@@ -98,7 +98,7 @@ Box(
 
 ### `ScrollBox`
 
-Scrollable container. Content beyond bounds is clipped and scrollable via mouse wheel.
+Scrollable container. Content beyond bounds is clipped and scrollable via mouse wheel. Clicking the scrollbar jumps to that position.
 
 ```python
 ScrollBox(
@@ -107,7 +107,7 @@ ScrollBox(
 )
 ```
 
-Props: `on_scroll(y, h)`.
+Props: `on_scroll(y, h)`. Scrollbar appears automatically when `content_h > node.h`.
 
 ### `Divider`
 
@@ -200,7 +200,7 @@ Props: `value`, `on_change`, `placeholder`, `on_submit`. Focusable. Supports typ
 
 ### `Textarea`
 
-Multi-line text input. Supports Enter for newlines.
+Multi-line text input with cursor navigation. Supports Enter for newlines, arrow keys for cursor movement, and HOME/END for line boundaries.
 
 ```python
 Textarea(
@@ -209,7 +209,7 @@ Textarea(
 )
 ```
 
-Props: `value`, `on_change`. Focusable.
+Props: `value`, `on_change`. Focusable. Supports LEFT, RIGHT, UP, DOWN, HOME, END, BACKSPACE (deletes before cursor), ENTER (splits line at cursor), and insert-at-cursor for printable characters.
 
 ### `Checkbox`
 
@@ -296,7 +296,7 @@ Props: `columns` (list of `{key, title, width}`), `data` (list of dicts). Click 
 
 ### `VirtualList`
 
-Windowed list for 1000+ items. Only renders visible items.
+Windowed list for 1000+ items. Only renders visible items. Scroll position persists across re-renders.
 
 ```python
 VirtualList(
@@ -308,7 +308,7 @@ VirtualList(
 )
 ```
 
-Props: `items`, `render_item(item, index)`, `item_height`.
+Props: `items`, `render_item(item, index)`, `item_height`, `height` (viewport height, default 15).
 
 ### `ProgressBar`
 

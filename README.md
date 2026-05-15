@@ -10,18 +10,20 @@
 - **30+ Widgets** — From buttons and inputs to tables, virtual lists, markdown renderer, and modals.
 - **Cross-Platform** — Linux, macOS, and Windows 10+.
 
-## Key Features (v0.3.0)
+## Key Features (v0.4.0)
 
 - **Component Model** — Class-based and functional components with key-based reconciliation.
-- **Hooks** — `useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, `useWindowSize`.
+- **Hooks** — `useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, `useWindowSize`. Effects properly trigger re-renders.
 - **Flexbox Layout** — Column/row layout with `flex_grow`, `gap`, `justify_content`, `align_items`, padding, margin, and percentage dimensions.
 - **Keyboard Navigation** — Tab to cycle focus, Space/Enter to activate buttons and toggles. Focus trapped inside modals.
 - **Rich Styling** — Hex and RGB colors, style arrays, `hover_style`/`focus_style` pseudo-classes, `box_shadow`, `text_transform`.
-- **Full Mouse Support** — Click, scroll, hover tracking, tooltips.
-- **Window Management** — Stack-based windows, dialogs, modals with auto-dim background.
-- **Advanced Widgets** — `Table` (sortable), `VirtualList` (windowed for large datasets), `Markdown`, `Code` (syntax-highlighted via Tree-sitter), `Accordion`, `Slider`, `Timeline`.
-- **Refs** — `useRef` wired to `LayoutNode` for imperative access (v0.3.0).
-- **StyleSheet Validation** — `StyleSheet.create` validates prop names and types at definition time (v0.3.0).
+- **Full Mouse Support** — Click, scroll, hover tracking, tooltips. Clickable scrollbar thumbs.
+- **Window Management** — Stack-based windows, dialogs, modals with auto-dim background. Context manager support for clean exit.
+- **Advanced Widgets** — `Table` (sortable), `VirtualList` (windowed, persistent scroll), `Markdown`, `Code` (syntax-highlighted via Tree-sitter), `Accordion`, `Slider`, `Timeline`.
+- **Textarea with Cursor** — Arrow keys, HOME/END, insert and delete at cursor position.
+- **Refs** — `useRef` wired to `LayoutNode` for imperative access.
+- **StyleSheet Validation** — `StyleSheet.create` validates prop names and types at definition time.
+- **Extensible Widget System** — Widget handlers registered via `widgets.register()`, enabling custom widget types without editing core files.
 
 ## Installation
 
