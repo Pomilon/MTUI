@@ -189,7 +189,7 @@ def Timeline(**kwargs):
 class VirtualListClass(Component):
     def __init__(self, props):
         super().__init__(props)
-        self.state = {'scroll_y': 0, 'view_h': 0}
+        self.state = {'scroll_y': 0, 'view_h': props.get('height', 15) if props else 15}
 
     def render(self):
         items = self.props.get('items', [])
