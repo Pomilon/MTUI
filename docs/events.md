@@ -10,7 +10,7 @@ Only one element can be focused at a time. Focusable types: `input`, `button`, `
 - **Click** — Focuses the clicked element if it's focusable.
 - **Modal trapping (v0.3.0+)** — When a `Dialog` or `Modal` is open, Tab cycling is automatically restricted to elements within that modal. Focus cannot escape to the background window.
 
-Toggle the inspector overlay with **F12** to see element types, positions, and sizes.
+Toggle the inspector overlay with **F12** to see element types, positions, and sizes. Press **Ctrl+E** to open the error log viewer (shows render errors, handler errors, and crash logs).
 
 ## Keyboard Events
 

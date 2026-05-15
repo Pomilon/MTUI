@@ -10,7 +10,7 @@
 - **30+ Widgets** — From buttons and inputs to tables, virtual lists, markdown renderer, and modals.
 - **Cross-Platform** — Linux, macOS, and Windows 10+.
 
-## Key Features (v0.4.0)
+## Key Features (v0.7.0)
 
 - **Component Model** — Class-based and functional components with key-based reconciliation.
 - **Hooks** — `useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, `useWindowSize`. Effects properly trigger re-renders.
@@ -24,6 +24,10 @@
 - **Refs** — `useRef` wired to `LayoutNode` for imperative access.
 - **StyleSheet Validation** — `StyleSheet.create` validates prop names and types at definition time.
 - **Extensible Widget System** — Widget handlers registered via `widgets.register()`, enabling custom widget types without editing core files.
+- **Error Handling** — Per-window error isolation, toast notifications for render errors, structured error log to file.
+- **Error Log Viewer** — Press **Ctrl+E** to open a scrollable overlay showing all logged errors with severity coloring.
+- **Layout Engine** — Pure `measure()` with no side effects, single-pass `layout()` with constraint enforcement (`width`/`height`/`min_width`/`max_width`/`min_height`/`max_height`).
+- **Pytest Infrastructure** — 44 tests run via a single `pytest tests/` command.
 
 ## Installation
 
