@@ -130,7 +130,8 @@ def layout(node, x, y, avail_w, avail_h, parent_screen_x=0, parent_screen_y=0):
             continue
         grow = child.props.get('flex_grow', 0)
         cw, ch = measure(child, inner_w, inner_h)
-        child_data.append((child, cw, ch, grow))
+        (cpt, cpb, cpl, cpr), (cmt, cmb, cml, cmr) = get_spacing(child)
+        child_data.append((child, cw, ch, grow, cpt, cpb, cpl, cpr, cmt, cmb, cml, cmr))
 
     flex_dir = node.props.get('flex_direction', 'column')
     gap = node.props.get('gap', 0)
@@ -139,11 +140,12 @@ def layout(node, x, y, avail_w, avail_h, parent_screen_x=0, parent_screen_y=0):
 
     flex_total = 0
     fixed_main = 0
-    for child, cw, ch, grow in child_data:
+    for _child, cw, ch, grow, cpt, cpb, cpl, cpr, cmt, cmb, cml, cmr in child_data:
+        total_main = (ch + cpt + cpb + cmt + cmb) if flex_dir == 'column' else (cw + cpl + cpr + cml + cmr)
         if grow > 0:
             flex_total += grow
         else:
-            fixed_main += ch if flex_dir == 'column' else cw
+            fixed_main += total_main
 
     gap_count = max(0, len(child_data) - 1)
     fixed_main += gap_count * gap
@@ -167,7 +169,9 @@ def layout(node, x, y, avail_w, avail_h, parent_screen_x=0, parent_screen_y=0):
     content_w = 0
     content_h = 0
 
-    for child, cw, ch, grow in child_data:
+    for child, cw, ch, grow, cpt, cpb, cpl, cpr, cmt, cmb, cml, cmr in child_data:
+        total_main = (ch + cpt + cpb + cmt + cmb) if flex_dir == 'column' else (cw + cpl + cpr + cml + cmr)
+
         if grow > 0:
             share = int(remaining * (grow / flex_total)) if flex_total > 0 else 0
             if flex_dir == 'column':
@@ -177,12 +181,16 @@ def layout(node, x, y, avail_w, avail_h, parent_screen_x=0, parent_screen_y=0):
                 child_w = share
                 child_h = inner_h
         else:
-            child_w = cw
-            child_h = ch
-            if flex_dir == 'column' and child.props.get('width') is None and align == 'stretch':
-                child_w = inner_w
-            if flex_dir == 'row' and child.props.get('height') is None and align == 'stretch':
-                child_h = inner_h
+            if flex_dir == 'column':
+                child_h = total_main
+                child_w = cw + cpl + cpr + cml + cmr
+                if child.props.get('width') is None and align == 'stretch':
+                    child_w = inner_w
+            else:
+                child_w = total_main
+                child_h = ch + cpt + cpb + cmt + cmb
+                if child.props.get('height') is None and align == 'stretch':
+                    child_h = inner_h
 
         cross_offset = 0
         if align == 'center':
