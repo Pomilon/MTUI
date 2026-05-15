@@ -1,6 +1,3 @@
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/python')))
-
 from rc_tui import (
     App, Component, Element, Text, Box, Input, ScrollBox, Button, Checkbox, 
     ProgressBar, Divider, Dialog, Modal, Switch, Dropdown, Markdown, Code, 

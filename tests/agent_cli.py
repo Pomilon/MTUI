@@ -1,8 +1,5 @@
-import sys
-import os
 import threading
 import time
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/python')))
 
 from rc_tui import App, Component, Element, Text, Box, Input, ScrollBox, Button, Checkbox, ProgressBar, Divider, Dialog, Modal, RadioButton, Switch, Dropdown
 

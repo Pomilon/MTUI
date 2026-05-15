@@ -1,7 +1,3 @@
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/python')))
-
 from rc_tui import Box, Text, StyleSheet, Button, useState
 from rc_tui.core import resolve_node_style
 

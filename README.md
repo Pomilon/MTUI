@@ -85,6 +85,22 @@ Check out the [examples/](./examples) directory:
 - `styling_showcase.py`: Comprehensive styling engine demo.
 - `dashboard.py`: Layout and progress indicators.
 
+## Running Demos
+
+After installing, run the demo scripts directly — no local path setup needed:
+
+```bash
+python tests/demo_app.py
+python tests/demo_stylesheet.py
+python tests/demo_features.py
+```
+
+For development, install in editable mode so changes take effect immediately:
+
+```bash
+pip install -e .
+```
+
 ## License
 
 MIT
