@@ -1,6 +1,6 @@
 [project]
 name = "rc-tui"
-version = "0.2.2"
+version = "0.3.0"
 description = "High-performance React-inspired TUI library for Python"
 readme = "README.md"
 requires-python = ">=3.9"
