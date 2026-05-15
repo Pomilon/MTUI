@@ -375,16 +375,16 @@ def test_widget_dispatch_integration():
     from rc_tui.input import KeyEvent
 
     results = []
-    register('test_click', on_click=lambda n, e: results.append('click'))
+    register('test_click', on_click=lambda n, e, app: results.append('click'))
     register('test_key', on_key=lambda n, e: results.append(f"key_{e.key}"))
 
-    dispatch_widget_click('test_click', None, None)
+    dispatch_widget_click('test_click', None, None, None)
     assert results == ['click'], f"Expected ['click'], got {results}"
 
     dispatch_widget_key('test_key', None, KeyEvent('ENTER'))
     assert results == ['click', 'key_ENTER'], f"Expected ['click', 'key_ENTER'], got {results}"
 
-    dispatch_widget_click('unknown_type', None, None)
+    dispatch_widget_click('unknown_type', None, None, None)
     dispatch_widget_key('unknown_type', None, KeyEvent('x'))
     assert results == ['click', 'key_ENTER'], "Unknown types should be no-ops"
 

@@ -395,6 +395,154 @@ def _draw_input(node, canvas, style):
             canvas.draw_text(node.screen_x + off + cursor_pos, node.screen_y + off, "_", input_style)
 
 
+def _click_tabselect(node, event, app):
+    options = node.props.get('options', [])
+    relative_x = event.x - node.screen_x
+    curr_x = 0
+    for i, opt in enumerate(options):
+        tab_w = len(str(opt)) + 3
+        if curr_x <= relative_x < curr_x + tab_w:
+            on_change = node.props.get('on_change')
+            if on_change:
+                on_change(i)
+            return True
+        curr_x += tab_w
+    return False
+
+
+def _click_select(node, event, app):
+    app._open_select_menu(node)
+    return True
+
+
+def _click_checkbox(node, event, app):
+    on_change = node.props.get('on_change')
+    if on_change:
+        on_change(not node.props.get('checked', False))
+    return True
+
+
+def _click_radiobutton(node, event, app):
+    on_change = node.props.get('on_change')
+    if on_change:
+        on_change(True)
+    return True
+
+
+def _click_switch(node, event, app):
+    on_change = node.props.get('on_change')
+    if on_change:
+        on_change(not node.props.get('on', False))
+    return True
+
+
+def _key_tabselect(node, event):
+    if event.key in ('LEFT', 'RIGHT', ' ', 'ENTER'):
+        on_change = node.props.get('on_change')
+        if on_change:
+            opts = node.props.get('options', [])
+            idx = node.props.get('selected_index', 0)
+            if event.key in ('RIGHT', ' ', 'ENTER'):
+                on_change((idx + 1) % len(opts) if opts else 0)
+            elif event.key == 'LEFT':
+                on_change((idx - 1) % len(opts) if opts else 0)
+        return True
+    return False
+
+
+def _key_select(node, event):
+    if event.key in (' ', 'ENTER', 'DOWN', 'UP'):
+        return False  # Handled in app.py (needs app access)
+    return False
+
+
+def _key_checkbox(node, event):
+    if event.key in (' ', 'ENTER'):
+        on_change = node.props.get('on_change')
+        if on_change:
+            on_change(not node.props.get('checked', False))
+        return True
+    return False
+
+
+def _key_radiobutton(node, event):
+    if event.key in (' ', 'ENTER'):
+        on_change = node.props.get('on_change')
+        if on_change:
+            on_change(True)
+        return True
+    return False
+
+
+def _key_switch(node, event):
+    if event.key in (' ', 'ENTER'):
+        on_change = node.props.get('on_change')
+        if on_change:
+            on_change(not node.props.get('on', False))
+        return True
+    return False
+
+
+def _key_input(node, event):
+    val = node.props.get('value', '')
+    if event.key == 'BACKSPACE':
+        if val:
+            val = val[:-1]
+    elif event.key == 'ENTER':
+        on_submit = node.props.get('on_submit')
+        if on_submit:
+            on_submit(val)
+            return True
+    elif len(event.key) == 1:
+        val += event.key
+    else:
+        return False
+
+    if val != node.props.get('value'):
+        node.props['value'] = val
+        on_change = node.props.get('on_change')
+        if on_change:
+            on_change(val)
+    return True
+
+
+def _key_textarea(node, event):
+    val = node.props.get('value', '')
+    if event.key == 'BACKSPACE':
+        if val:
+            val = val[:-1]
+    elif event.key == 'ENTER':
+        val += '\n'
+    elif len(event.key) == 1:
+        val += event.key
+    else:
+        return False
+
+    if val != node.props.get('value'):
+        node.props['value'] = val
+        on_change = node.props.get('on_change')
+        if on_change:
+            on_change(val)
+    return True
+
+
+def _key_button(node, event):
+    if event.key in (' ', 'ENTER'):
+        on_click = node.props.get('on_click')
+        if on_click:
+            try:
+                on_click(event)
+            except TypeError:
+                try:
+                    on_click()
+                except Exception as e:
+                    pass
+            except Exception as e:
+                pass
+        return True
+    return False
+
+
 def register(type_name, *, measure=None, draw=None, on_click=None, on_key=None):
     if measure:
         _MEASURE[type_name] = measure
@@ -444,14 +592,33 @@ register('checkbox', draw=_draw_checkbox)
 register('progressbar', draw=_draw_progressbar)
 register('input', draw=_draw_input)
 
+# Click handlers
+register('tabselect', on_click=_click_tabselect)
+register('select', on_click=_click_select)
+register('checkbox', on_click=_click_checkbox)
+register('radiobutton', on_click=_click_radiobutton)
+register('switch', on_click=_click_switch)
 
-def dispatch_widget_click(type_name, node, event):
+# Key handlers
+register('tabselect', on_key=_key_tabselect)
+register('select', on_key=_key_select)
+register('checkbox', on_key=_key_checkbox)
+register('radiobutton', on_key=_key_radiobutton)
+register('switch', on_key=_key_switch)
+register('input', on_key=_key_input)
+register('textarea', on_key=_key_textarea)
+register('button', on_key=_key_button)
+
+
+def dispatch_widget_click(type_name, node, event, app):
     handler = _CLICK.get(type_name)
     if handler:
-        handler(node, event)
+        return handler(node, event, app)
+    return False
 
 
 def dispatch_widget_key(type_name, node, event):
     handler = _KEY.get(type_name)
     if handler:
-        handler(node, event)
+        return handler(node, event)
+    return False

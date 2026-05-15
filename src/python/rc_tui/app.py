@@ -304,45 +304,10 @@ class App:
                 self.request_render()
 
                 if target:
-                    if target.type == 'tabselect':
-                        options = target.props.get('options', [])
-                        relative_x = event.x - target.screen_x
-                        curr_x = 0
-                        clicked_idx = -1
-                        for i, opt in enumerate(options):
-                            tab_w = len(str(opt)) + 3
-                            if curr_x <= relative_x < curr_x + tab_w:
-                                clicked_idx = i
-                                break
-                            curr_x += tab_w
-                        
-                        if clicked_idx != -1:
-                            on_change = target.props.get('on_change')
-                            if on_change:
-                                on_change(clicked_idx)
-                                self.request_render()
-
-                    if target.type == 'select':
-                        self._open_select_menu(target)
+                    from .widgets import dispatch_widget_click
+                    if dispatch_widget_click(target.type, target, event, self):
                         self.request_render()
-
-                    if target.type == 'checkbox':
-                        on_change = target.props.get('on_change')
-                        if on_change: 
-                            on_change(not target.props.get('checked', False))
-                            self.request_render()
-                    
-                    if target.type == 'radiobutton':
-                        on_change = target.props.get('on_change')
-                        if on_change: 
-                            on_change(True)
-                            self.request_render()
-                    
-                    if target.type == 'switch':
-                        on_change = target.props.get('on_change')
-                        if on_change: 
-                            on_change(not target.props.get('on', False))
-                            self.request_render()
+                        return
 
                     n = target
                     while n:
@@ -401,81 +366,13 @@ class App:
                         self.request_render()
                         return
 
-                if focused_node.type == 'tabselect' and event.key in ('LEFT', 'RIGHT', ' ', 'ENTER'):
-                    on_change = focused_node.props.get('on_change')
-                    if on_change:
-                        opts = focused_node.props.get('options', [])
-                        idx = focused_node.props.get('selected_index', 0)
-                        if event.key in ('RIGHT', ' ', 'ENTER'):
-                            on_change((idx + 1) % len(opts) if opts else 0)
-                        elif event.key == 'LEFT':
-                            on_change((idx - 1) % len(opts) if opts else 0)
-                        self.request_render()
+                from .widgets import dispatch_widget_key
+                if dispatch_widget_key(focused_node.type, focused_node, event):
+                    self.request_render()
                     return
 
                 if focused_node.type == 'select' and event.key in (' ', 'ENTER', 'DOWN', 'UP'):
                     self._open_select_menu(focused_node)
-                    self.request_render()
-                    return
-
-                if focused_node.type in ('checkbox', 'radiobutton', 'switch') and event.key in (' ', 'ENTER'):
-                    on_change = focused_node.props.get('on_change')
-                    if on_change: 
-                        if focused_node.type == 'checkbox':
-                            on_change(not focused_node.props.get('checked', False))
-                        elif focused_node.type == 'radiobutton':
-                            on_change(True)
-                        elif focused_node.type == 'switch':
-                            on_change(not focused_node.props.get('on', False))
-                        self.request_render()
-                    return
-
-                if focused_node.type == 'input':
-                    val = focused_node.props.get('value', '')
-                    if event.key == 'BACKSPACE':
-                        if val:
-                            val = val[:-1]
-                    elif event.key == 'ENTER':
-                        on_submit = focused_node.props.get('on_submit')
-                        if on_submit:
-                            on_submit(val)
-                            self.request_render()
-                    elif len(event.key) == 1:
-                        val += event.key
-                    
-                    if val != focused_node.props.get('value'):
-                        focused_node.props['value'] = val
-                        on_change = focused_node.props.get('on_change')
-                        if on_change: on_change(val)
-                        self.request_render()
-                
-                if focused_node.type == 'textarea':
-                    val = focused_node.props.get('value', '')
-                    if event.key == 'BACKSPACE':
-                        if val: val = val[:-1]
-                    elif event.key == 'ENTER':
-                        val += '\n'
-                    elif len(event.key) == 1:
-                        val += event.key
-                    
-                    if val != focused_node.props.get('value'):
-                        focused_node.props['value'] = val
-                        on_change = focused_node.props.get('on_change')
-                        if on_change: on_change(val)
-                        self.request_render()
-
-                if focused_node.type == 'button' and event.key in (' ', 'ENTER'):
-                    on_click = focused_node.props.get('on_click')
-                    if on_click:
-                        try:
-                            on_click(event)
-                        except TypeError:
-                            try:
-                                on_click()
-                            except Exception as e:
-                                self.log_error(f"on_click handler error: {e}")
-                        except Exception as e:
-                            self.log_error(f"on_click handler error: {e}")
                     self.request_render()
                     return
 
