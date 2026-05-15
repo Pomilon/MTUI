@@ -675,7 +675,6 @@ def test_ctrl_e_error_log_overlay():
     from rc_tui.input import KeyEvent
     from rc_tui import App
     from rc_tui.core import Component
-    from rc_tui.dom import Box, Text
 
     class MT:
         def enable_raw_mode(self): pass
@@ -687,37 +686,41 @@ def test_ctrl_e_error_log_overlay():
         def clear_screen(self): pass
         def get_size(self): return (80, 24)
 
+    # Test with NO errors — overlay should still toggle
+    app = App(None, terminal=MT())
+    assert not app.show_error_log
+    app.dispatch_event(KeyEvent('CTRL_E'))
+    assert app.show_error_log, "Ctrl+E should open overlay (even with no errors)"
+    app.dispatch_event(KeyEvent('CTRL_E'))
+    assert not app.show_error_log
+    app.cleanup()
+    print("test_ctrl_e_error_log_overlay (empty) PASSED")
+
+    # Test with errors
     class CrashComponent(Component):
         def render(self):
             raise RuntimeError("test error for overlay")
 
-    app = App(CrashComponent, terminal=MT())
-    app._step()
-    assert len(app.errors.errors) >= 1, "Error should be logged"
-    assert "test error for overlay" in app.errors.errors[-1][2]
+    app2 = App(CrashComponent, terminal=MT())
+    app2._step()
+    assert len(app2.errors.errors) >= 1
+    assert "test error for overlay" in app2.errors.errors[-1][2]
 
-    # Ctrl+E toggles overlay
-    assert not app.show_error_log
-    app.dispatch_event(KeyEvent('CTRL_E'))
-    assert app.show_error_log, "Ctrl+E should open error log"
-    app.dispatch_event(KeyEvent('CTRL_E'))
-    assert not app.show_error_log, "Ctrl+E should close error log"
+    app2.dispatch_event(KeyEvent('CTRL_E'))
+    assert app2.show_error_log
+    app2.dispatch_event(KeyEvent('CTRL_E'))
+    assert not app2.show_error_log
 
-    # Open, scroll, close
-    app.dispatch_event(KeyEvent('CTRL_E'))
-    assert app.show_error_log
-    app.dispatch_event(KeyEvent('DOWN'))
-    assert app.error_log_scroll == 1
-    app.dispatch_event(KeyEvent('ESC'))
-    assert not app.show_error_log
+    app2.dispatch_event(KeyEvent('CTRL_E'))
+    app2.dispatch_event(KeyEvent('DOWN'))
+    assert app2.error_log_scroll == 1
+    app2.dispatch_event(KeyEvent('ESC'))
+    assert not app2.show_error_log
 
-    # Verify crash toast was queued
-    notifications = app.notifications
-    has_error_toast = any("error" in str(n.get('text', '')).lower() for n in notifications)
-    assert has_error_toast or len(app.errors.errors) > 0
-
-    app.cleanup()
-    print("test_ctrl_e_error_log_overlay PASSED")
+    has_toast = any("error" in str(n.get('text','')).lower() for n in app2.notifications)
+    assert has_toast or len(app2.errors.errors) > 0
+    app2.cleanup()
+    print("test_ctrl_e_error_log_overlay (with errors) PASSED")
 
 
 if __name__ == "__main__":

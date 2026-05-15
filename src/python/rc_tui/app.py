@@ -298,8 +298,6 @@ class App:
         if not self.show_error_log:
             return
         entries = self.errors.errors
-        if not entries:
-            return
 
         w = min(70, self.canvas.width - 2)
         h = min(20, self.canvas.height - 2)
@@ -316,6 +314,9 @@ class App:
 
         scroll = self.error_log_scroll
         visible = h - 3
+        if not entries:
+            empty_s = tui_core.Style(150, 150, 150, 20, 20, 30, False)
+            self.canvas.draw_text(x + 1, y + 2, "No errors logged.", empty_s)
         for i, (ts, sev, msg, tb) in enumerate(entries[scroll:scroll + visible]):
             line = f"[{sev}] {msg[:w-8]}"
             if sev == 'FATAL':
