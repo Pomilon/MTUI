@@ -433,6 +433,20 @@ def _click_radiobutton(node, event, app):
     return True
 
 
+def _click_scrollbox(node, event, app):
+    if event.x == node.screen_x + node.w - 1 and node.content_h > node.h:
+        track_h = node.h
+        rel_y = event.y - node.screen_y
+        ratio = rel_y / track_h
+        max_scroll = max(0, node.content_h - node.h)
+        node.scroll_y = int(ratio * max_scroll)
+        on_scroll = node.props.get('on_scroll')
+        if on_scroll:
+            on_scroll(node.scroll_y, node.h)
+        return True
+    return False
+
+
 def _click_switch(node, event, app):
     on_change = node.props.get('on_change')
     if on_change:
@@ -648,6 +662,7 @@ register('select', on_click=_click_select)
 register('checkbox', on_click=_click_checkbox)
 register('radiobutton', on_click=_click_radiobutton)
 register('switch', on_click=_click_switch)
+register('scrollbox', on_click=_click_scrollbox)
 
 # Key handlers
 register('tabselect', on_key=_key_tabselect)

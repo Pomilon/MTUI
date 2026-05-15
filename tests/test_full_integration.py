@@ -439,6 +439,31 @@ def test_textarea_insert_at_cursor():
     print("test_textarea_insert_at_cursor PASSED")
 
 
+def test_scrollbar_click():
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.widgets import _CLICK
+
+    sb = LayoutNode(Element('scrollbox', {}))
+    sb.content_h = 100
+    sb.h = 20
+    sb.w = 30
+    sb.scroll_y = 0
+    sb.screen_x = 0
+    sb.screen_y = 0
+
+    class MockEvent:
+        x = 29  # Rightmost column (w-1)
+        y = 10  # Halfway down
+        type = 'CLICK'
+
+    _CLICK['scrollbox'](sb, MockEvent(), None)
+    max_scroll = max(0, sb.content_h - sb.h)
+    expected = int((10 / 20) * max_scroll)
+    assert sb.scroll_y == expected, f"Expected scroll_y={expected}, got {sb.scroll_y}"
+    print("test_scrollbar_click PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -459,3 +484,4 @@ if __name__ == "__main__":
     test_widget_dispatch_integration()
     test_textarea_cursor_navigation()
     test_textarea_insert_at_cursor()
+    test_scrollbar_click()
