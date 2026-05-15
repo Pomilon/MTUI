@@ -95,12 +95,13 @@ def layout(node, x, y, avail_w, avail_h, parent_screen_x=0, parent_screen_y=0):
 
     if node.type in ('dialog', 'modal'):
         cw, ch = measure(node, avail_w, avail_h)
+        cw, ch = _apply_constraints(node, avail_w - ml - mr, avail_h - mt - mb)
         if node.props.get('x') is None:
             x = (avail_w - cw) // 2
         if node.props.get('y') is None:
             y = (avail_h - ch) // 2
-        avail_w = cw
-        avail_h = ch
+        avail_w = cw + ml + mr
+        avail_h = ch + mt + mb
 
     assigned_w, assigned_h = _apply_constraints(node, avail_w - ml - mr, avail_h - mt - mb)
 
