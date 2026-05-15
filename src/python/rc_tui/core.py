@@ -85,8 +85,12 @@ class Component:
         self._hooks = []
 
     def set_state(self, state_update):
-        self.state.update(state_update)
-        if self.app:
+        changed = False
+        for k, v in state_update.items():
+            if self.state.get(k) != v:
+                self.state[k] = v
+                changed = True
+        if changed and self.app:
             self.app.request_render()
 
     def run_effect(self, idx):

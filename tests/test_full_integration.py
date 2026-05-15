@@ -501,6 +501,31 @@ def test_effect_dedup():
     print("test_effect_dedup PASSED")
 
 
+def test_set_state_change_detection():
+    from rc_tui.core import Component
+    renders = []
+    mock_app = type('MockApp', (), {'request_render': lambda self: renders.append('render')})()
+    comp = Component()
+    comp.app = mock_app
+    comp.state = {'count': 0, 'name': 'hello'}
+
+    comp.set_state({'count': 0})
+    assert len(renders) == 0, f"Expected 0 renders for same value, got {len(renders)}"
+
+    comp.set_state({'count': 1})
+    assert len(renders) == 1, f"Expected 1 render for new value, got {len(renders)}"
+    assert comp.state['count'] == 1
+
+    comp.set_state({'count': 1})
+    assert len(renders) == 1, f"Expected still 1 render, got {len(renders)}"
+
+    comp.set_state({'name': 'world'})
+    assert len(renders) == 2
+    assert comp.state['name'] == 'world'
+
+    print("test_set_state_change_detection PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -525,3 +550,4 @@ if __name__ == "__main__":
     test_virtuallist_as_component()
     test_effect_dedup()
     test_app_context_manager()
+    test_set_state_change_detection()
