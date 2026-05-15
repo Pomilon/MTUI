@@ -472,6 +472,35 @@ def test_virtuallist_as_component():
     print("test_virtuallist_as_component PASSED")
 
 
+def test_app_context_manager():
+    from rc_tui.app import App
+
+    with App(None, terminal=MockTerminal()) as app:
+        pass
+    print("test_app_context_manager PASSED")
+
+
+def test_effect_dedup():
+    from rc_tui.hooks import useEffect
+    from rc_tui.hooks import _current_instance, _hook_index
+
+    app = type('MockApp', (), {'_pending_effects': [], '_pending_effects_set': set(), 'request_render': lambda: None})()
+    inst = type('MockInst', (), {'_hooks': [], 'app': app})()
+
+    prev = (_current_instance, _hook_index)
+    import rc_tui.hooks as hooks
+    hooks._current_instance = inst
+    hooks._hook_index = 0
+    useEffect(lambda: None, [])
+    useEffect(lambda: None, [])
+    hooks._current_instance, hooks._hook_index = prev
+
+    assert len(app._pending_effects) == 2
+    assert len(app._pending_effects_set) == 2
+
+    print("test_effect_dedup PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -494,3 +523,5 @@ if __name__ == "__main__":
     test_textarea_insert_at_cursor()
     test_scrollbar_click()
     test_virtuallist_as_component()
+    test_effect_dedup()
+    test_app_context_manager()

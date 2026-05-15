@@ -63,6 +63,13 @@ class App:
         self.hovered_node = None
         self.focused_node = None
         self._pending_effects = []
+        self._pending_effects_set = set()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.cleanup()
 
     def __del__(self):
         self.cleanup()
@@ -183,6 +190,7 @@ class App:
             # Run pending effects after paint
             effects = self._pending_effects
             self._pending_effects = []
+            self._pending_effects_set.clear()
             for instance, idx in effects:
                 instance.run_effect(idx)
         except Exception as e:
