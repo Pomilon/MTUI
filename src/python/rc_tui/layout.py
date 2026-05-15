@@ -173,9 +173,9 @@ def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_scre
                 ch = inner_h
         else:
             if flex_dir == 'column' and child.props.get('width') is None and align == 'stretch':
-                cw = max(cw, inner_w)
+                cw = inner_w
             if flex_dir == 'row' and child.props.get('height') is None and align == 'stretch':
-                ch = max(ch, inner_h)
+                ch = inner_h
 
         cross_offset = 0
         if align == 'center':
