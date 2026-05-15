@@ -34,82 +34,22 @@ def measure(node, max_w, max_h):
         w = max((len(l) for l in lines), default=0)
         h = len(lines)
         return w, h
-    
+
+    from .widgets import _MEASURE
+    handler = _MEASURE.get(node.type)
+    if handler:
+        w, h = handler(node, max_w, max_h)
+        node.w = w
+        node.h = h
+        return w, h
+
     (pt, pb, pl, pr), (mt, mb, ml, mr) = get_spacing(node)
-    
+
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
-    
-    # Intrinsic size components
-    if node.type in ('input', 'textarea', 'progressbar'):
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 20)
-        h = parse_dim(h_prop, max_h) if h_prop is not None else (5 if node.type == 'textarea' else 1)
-        return w + pl + pr + ml + mr, h + pt + pb + mt + mb
-    
-    if node.type == 'button':
-        text = str(node.props.get('text', ''))
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (len(text) + 4)
-        h = parse_dim(h_prop, max_h) if h_prop is not None else 1
-        return w + pl + pr + ml + mr, h + pt + pb + mt + mb
 
-    if node.type == 'checkbox':
-        label = str(node.props.get('label', ''))
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (len(label) + 4)
-        h = parse_dim(h_prop, max_h) if h_prop is not None else 1
-        return w + pl + pr + ml + mr, h + pt + pb + mt + mb
-        
-    if node.type == 'divider':
-        w = max_w if max_w is not None else 1
-        h = 1
-        return w, h
-    
-    if node.type == 'radiobutton':
-        label = str(node.props.get('label', ''))
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (len(label) + 4)
-        h = 1
-        return w + ml + mr, h + mt + mb
-        
-    if node.type == 'switch':
-        label = str(node.props.get('label', ''))
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (len(label) + 10)
-        h = 1
-        return w + ml + mr, h + mt + mb
-        
-    if node.type == 'select':
-        options = node.props.get('options', [])
-        max_opt_w = max((len(str(o)) for o in options), default=0)
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (max_opt_w + 6)
-        h = 1
-        return w + pl + pr + ml + mr, h + pt + pb + mt + mb
-
-    if node.type == 'tabselect':
-        options = node.props.get('options', [])
-        total_w = sum(len(str(o)) + 4 for o in options)
-        return total_w + ml + mr, 1 + mt + mb
-
-    if node.type in ('code', 'diff', 'markdown'):
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 40)
-        content = str(node.props.get('content', ''))
-        if node.type == 'markdown':
-            h = parse_dim(h_prop, max_h) if h_prop is not None else len(content.split('\n')) + 2
-        else:
-            h = parse_dim(h_prop, max_h) if h_prop is not None else 10
-        return w + ml + mr, h + mt + mb
-    
-    if node.type == 'linenumber':
-        count = node.props.get('count', 0)
-        w = len(str(count)) + 2
-        return w, 1
-
-    if node.type == 'asciifont':
-        return (max_w or 40) + ml + mr, 5 + mt + mb
-        
-    if node.type == 'toast':
-        message = str(node.props.get('message', ''))
-        w = len(message) + 4
-        h = 3
-        return w, h
-
+    # Container measurement (box, scrollbox, and any unregistered types)
+    # Dialog/modal need centering positioning — keep the old logic
     if node.type in ('dialog', 'modal'):
         w = parse_dim(w_prop, max_w) if w_prop is not None else (max_w // 2 if max_w else 40)
         h = parse_dim(h_prop, max_h) if h_prop is not None else (max_h // 2 if max_h else 10)
@@ -117,19 +57,19 @@ def measure(node, max_w, max_h):
     else:
         w = parse_dim(w_prop, max_w)
         h = parse_dim(h_prop, max_h)
-    
+
     if w is not None and h is not None and node.type not in ('dialog', 'modal', 'box', 'scrollbox'):
         node.w = w + pl + pr + ml + mr
         node.h = h + pt + pb + mt + mb
         return node.w, node.h
-        
+
     flex_dir = node.props.get('flex_direction', 'column')
     inner_max_w = max_w - pl - pr - ml - mr if max_w is not None else None
     inner_max_h = max_h - pt - pb - mt - mb if max_h is not None else None
-    
+
     measured_w = 0
     measured_h = 0
-    
+
     for child in node.children:
         cw, ch = measure(child, inner_max_w, inner_max_h)
         if flex_dir == 'column':
@@ -138,12 +78,12 @@ def measure(node, max_w, max_h):
         else:
             measured_w += cw
             measured_h = max(measured_h, ch)
-            
+
     if w is None:
         w = measured_w + pl + pr + ml + mr
     if h is None:
         h = measured_h + pt + pb + mt + mb
-        
+
     node.w = w
     node.h = h
     node.content_w = measured_w
