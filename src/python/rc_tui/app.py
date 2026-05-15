@@ -310,7 +310,7 @@ class App:
         self.canvas.fill_rect(x, y, w, h, bg)
         self.canvas.draw_rect(x, y, w, h, bg, 0)
 
-        header = " Error Log (F9/ESC close, UP/DOWN scroll) "
+        header = " Error Log (Ctrl+E/ESC close, UP/DOWN scroll) "
         header_s = tui_core.Style(255, 200, 0, 20, 20, 30, False)
         self.canvas.draw_text(x + 1, y + 1, header[:w-2], header_s)
 
@@ -355,7 +355,7 @@ class App:
                         self.request_render()
                         continue
 
-                    if isinstance(event, KeyEvent) and event.key == 'F9':
+                    if isinstance(event, KeyEvent) and event.key == 'CTRL_E':
                         self.show_error_log = not self.show_error_log
                         self.error_log_scroll = 0
                         self.request_render()
@@ -387,7 +387,7 @@ class App:
 
     def dispatch_event(self, event):
         if isinstance(event, KeyEvent):
-            if event.key == 'F9':
+            if event.key == 'CTRL_E':
                 self.show_error_log = not self.show_error_log
                 self.error_log_scroll = 0
                 self.request_render()

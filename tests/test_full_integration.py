@@ -671,7 +671,7 @@ def test_per_window_error_isolation():
     print("test_per_window_error_isolation PASSED")
 
 
-def test_f9_error_log_overlay():
+def test_ctrl_e_error_log_overlay():
     from rc_tui.input import KeyEvent
     from rc_tui import App
     from rc_tui.core import Component
@@ -696,25 +696,19 @@ def test_f9_error_log_overlay():
     assert len(app.errors.errors) >= 1, "Error should be logged"
     assert "test error for overlay" in app.errors.errors[-1][2]
 
-    # F9 toggles overlay
+    # Ctrl+E toggles overlay
     assert not app.show_error_log
-    app.dispatch_event(KeyEvent('F9'))
-    assert app.show_error_log, "F9 should open error log"
+    app.dispatch_event(KeyEvent('CTRL_E'))
+    assert app.show_error_log, "Ctrl+E should open error log"
+    app.dispatch_event(KeyEvent('CTRL_E'))
+    assert not app.show_error_log, "Ctrl+E should close error log"
 
-    # UP/DOWN scroll
+    # Open, scroll, close
+    app.dispatch_event(KeyEvent('CTRL_E'))
+    assert app.show_error_log
     app.dispatch_event(KeyEvent('DOWN'))
     assert app.error_log_scroll == 1
-
-    # ESC closes
     app.dispatch_event(KeyEvent('ESC'))
-    assert not app.show_error_log
-
-    # Verify F9 also handled through run() event loop
-    from rc_tui.input import KeyEvent as KE
-    app.show_error_log = False
-    app.dispatch_event(KE('F9'))
-    assert app.show_error_log, "F9 should work via dispatch_event"
-    app.dispatch_event(KE('F9'))
     assert not app.show_error_log
 
     # Verify crash toast was queued
@@ -723,7 +717,7 @@ def test_f9_error_log_overlay():
     assert has_error_toast or len(app.errors.errors) > 0
 
     app.cleanup()
-    print("test_f9_error_log_overlay PASSED")
+    print("test_ctrl_e_error_log_overlay PASSED")
 
 
 if __name__ == "__main__":
@@ -760,4 +754,4 @@ if __name__ == "__main__":
     test_error_log_basic()
     test_error_log_ring_buffer()
     test_per_window_error_isolation()
-    test_f9_error_log_overlay()
+    test_ctrl_e_error_log_overlay()
