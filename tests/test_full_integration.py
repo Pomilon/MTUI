@@ -54,5 +54,86 @@ def test_full_integration():
 
     print("Full integration verification passed!")
 
+class MockTerminal:
+    def enable_raw_mode(self): pass
+    def enter_alternate_screen(self): pass
+    def enable_mouse_tracking(self): pass
+    def disable_raw_mode(self): pass
+    def exit_alternate_screen(self): pass
+    def disable_mouse_tracking(self): pass
+    def clear_screen(self): pass
+    def get_size(self): return (80, 24)
+
+
+def test_button_keyboard_activation():
+    from rc_tui import App
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.input import KeyEvent
+
+    click_log = []
+    app = App(None, terminal=MockTerminal())
+
+    button = LayoutNode(Element('button', {'on_click': lambda: click_log.append('clicked')}))
+    button.is_focused = True
+    app.focused_node = button
+    app.windows[-1]['node'] = button
+
+    app.dispatch_event(KeyEvent(' '))
+    assert len(click_log) == 1, f"Expected 1 click after SPACE, got {len(click_log)}"
+
+    app.dispatch_event(KeyEvent('ENTER'))
+    assert len(click_log) == 2, f"Expected 2 clicks after ENTER, got {len(click_log)}"
+
+    app.cleanup()
+    print("test_button_keyboard_activation PASSED")
+
+
+def test_button_keyboard_no_on_click():
+    from rc_tui import App
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.input import KeyEvent
+
+    app = App(None, terminal=MockTerminal())
+    button = LayoutNode(Element('button', {}))
+    button.is_focused = True
+    app.focused_node = button
+    app.windows[-1]['node'] = button
+
+    app.dispatch_event(KeyEvent(' '))
+    app.dispatch_event(KeyEvent('ENTER'))
+    app.cleanup()
+    print("test_button_keyboard_no_on_click PASSED")
+
+
+def test_button_keyboard_activation_with_event():
+    from rc_tui import App
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.input import KeyEvent
+
+    received = []
+    app = App(None, terminal=MockTerminal())
+    button = LayoutNode(Element('button', {'on_click': lambda e: received.append(e.key)}))
+    button.is_focused = True
+    app.focused_node = button
+    app.windows[-1]['node'] = button
+
+    app.dispatch_event(KeyEvent(' '))
+    assert len(received) == 1, f"Expected 1 event, got {len(received)}"
+    assert received[0] == ' ', f"Expected key=' ', got '{received[0]}'"
+
+    app.dispatch_event(KeyEvent('ENTER'))
+    assert len(received) == 2, f"Expected 2 events, got {len(received)}"
+    assert received[1] == 'ENTER', f"Expected key='ENTER', got '{received[1]}'"
+
+    app.cleanup()
+    print("test_button_keyboard_activation_with_event PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
+    test_button_keyboard_activation()
+    test_button_keyboard_no_on_click()
+    test_button_keyboard_activation_with_event()

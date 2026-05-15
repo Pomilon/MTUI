@@ -464,6 +464,21 @@ class App:
                         if on_change: on_change(val)
                         self.request_render()
 
+                if focused_node.type == 'button' and event.key in (' ', 'ENTER'):
+                    on_click = focused_node.props.get('on_click')
+                    if on_click:
+                        try:
+                            on_click(event)
+                        except TypeError:
+                            try:
+                                on_click()
+                            except Exception as e:
+                                self.log_error(f"on_click handler error: {e}")
+                        except Exception as e:
+                            self.log_error(f"on_click handler error: {e}")
+                    self.request_render()
+                    return
+
             if event.key == 'TAB':
                 self._cycle_focus(node)
                 self.request_render()
