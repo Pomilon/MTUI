@@ -49,7 +49,10 @@ def useEffect(effect_fn, deps=None):
     if changed:
         hook["pending_effect"] = effect_fn
         hook["pending_deps"] = deps
-        instance.app._pending_effects.append((instance, idx))
+        key = (instance, idx)
+        if key not in instance.app._pending_effects_set:
+            instance.app._pending_effects_set.add(key)
+            instance.app._pending_effects.append((instance, idx))
 
 def useMemo(factory, deps):
     global _hook_index
