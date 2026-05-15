@@ -70,12 +70,15 @@ def measure(node, max_w, max_h):
         if child is None:
             continue
         cw, ch = measure(child, inner_max_w, inner_max_h)
+        (cpt, cpb, cpl, cpr), (cmt, cmb, cml, cmr) = get_spacing(child)
+        child_main = (ch + cpt + cpb + cmt + cmb) if flex_dir == 'column' else (cw + cpl + cpr + cml + cmr)
+        child_cross = (cw + cpl + cpr + cml + cmr) if flex_dir == 'column' else (ch + cpt + cpb + cmt + cmb)
         if flex_dir == 'column':
-            measured_w = max(measured_w, cw)
-            measured_h += ch
+            measured_w = max(measured_w, child_cross)
+            measured_h += child_main
         else:
-            measured_w += cw
-            measured_h = max(measured_h, ch)
+            measured_w += child_main
+            measured_h = max(measured_h, child_cross)
 
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
