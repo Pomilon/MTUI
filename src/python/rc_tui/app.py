@@ -497,6 +497,16 @@ class App:
             self._clear_focus(child)
 
     def _cycle_focus(self, node):
+        if self.windows:
+            top_node = self.windows[-1].get('node')
+            if top_node:
+                if top_node.type in ('dialog', 'modal'):
+                    node = top_node
+                elif node is None:
+                    node = top_node
+        if node is None:
+            return
+
         focusable_types = ('input', 'button', 'checkbox', 'radiobutton', 'switch', 'select', 'tabselect', 'textarea')
         
         all_focusable = []

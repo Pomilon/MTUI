@@ -261,6 +261,63 @@ def test_ref_no_op_when_absent():
     print("test_ref_no_op_when_absent PASSED")
 
 
+def test_modal_focus_trapping():
+    from rc_tui import App
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+
+    app = App(None, terminal=MockTerminal())
+
+    modal_button = LayoutNode(Element('button', {'text': 'OK'}))
+    modal = LayoutNode(Element('modal', {}, [modal_button]))
+    modal_button.parent = modal
+    modal.children = [modal_button]
+
+    bg_input = LayoutNode(Element('input', {}))
+    bg = LayoutNode(Element('box', {}, [bg_input]))
+    bg_input.parent = bg
+
+    app.windows = [
+        {'element': None, 'node': bg},
+        {'element': None, 'node': modal},
+    ]
+    app._clear_focus(bg)
+
+    app._cycle_focus(None)
+    assert app.focused_node == modal_button, \
+        f"Tab should focus modal button, got {app.focused_node.type if app.focused_node else None}"
+
+    app.cleanup()
+    print("test_modal_focus_trapping PASSED")
+
+
+def test_normal_window_focus_untouched():
+    from rc_tui import App
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+
+    app = App(None, terminal=MockTerminal())
+
+    btn1 = LayoutNode(Element('button', {'text': 'A'}))
+    btn2 = LayoutNode(Element('button', {'text': 'B'}))
+    root = LayoutNode(Element('box', {}, [btn1, btn2]))
+    btn1.parent = root
+    btn2.parent = root
+    root.children = [btn1, btn2]
+
+    app.windows = [{'element': None, 'node': root}]
+    app._clear_focus(root)
+
+    app._cycle_focus(None)
+    assert app.focused_node == btn1, "First Tab should focus btn1"
+
+    app._cycle_focus(None)
+    assert app.focused_node == btn2, "Second Tab should focus btn2"
+
+    app.cleanup()
+    print("test_normal_window_focus_untouched PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -272,3 +329,5 @@ if __name__ == "__main__":
     test_justify_content_flex_start_default()
     test_ref_wired_to_layout_node()
     test_ref_no_op_when_absent()
+    test_modal_focus_trapping()
+    test_normal_window_focus_untouched()
