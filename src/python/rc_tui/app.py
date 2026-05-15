@@ -10,6 +10,25 @@ import time
 import traceback
 import sys
 
+class ErrorLog:
+    def __init__(self, file_path=None):
+        self.errors = []
+        self._max_entries = 50
+        self.file_path = file_path
+
+    def log(self, severity, message, traceback_str=""):
+        entry = (time.time(), severity, message, traceback_str)
+        self.errors.append(entry)
+        if len(self.errors) > self._max_entries:
+            self.errors.pop(0)
+        if self.file_path:
+            try:
+                with open(self.file_path, "a") as f:
+                    f.write(f"[{time.ctime()}][{severity}] {message}\n{traceback_str}\n")
+            except (IOError, OSError):
+                pass
+
+
 class App:
     def __init__(self, root_comp_cls, props=None, debug_file=None, terminal=None):
         self.terminal = terminal or tui_core.Terminal()
@@ -65,6 +84,12 @@ class App:
         self._pending_effects = []
         self._pending_effects_set = set()
 
+        self.errors = ErrorLog("rc_tui_errors.log")
+        self.show_error_log = False
+        self.error_log_scroll = 0
+        self._original_excepthook = sys.excepthook
+        sys.excepthook = self._fatal_excepthook
+
     def __enter__(self):
         return self
 
@@ -74,7 +99,16 @@ class App:
     def __del__(self):
         self.cleanup()
 
+    def _fatal_excepthook(self, type, value, tb):
+        tb_str = "".join(traceback.format_exception(type, value, tb))
+        if hasattr(self, 'errors'):
+            self.errors.log("FATAL", f"Unhandled: {value}", tb_str)
+        print(f"\nRC-TUI FATAL: {value}", file=sys.stderr)
+        print(tb_str, file=sys.stderr)
+
     def cleanup(self):
+        if hasattr(self, '_original_excepthook') and self._original_excepthook:
+            sys.excepthook = self._original_excepthook
         # Run cleanups for all windows
         try:
             from .reconciler import _unmount_node
@@ -156,19 +190,27 @@ class App:
             
             # Reconcile and layout windows
             for i, win in enumerate(self.windows):
-                if self.needs_render or resized or win['node'] is None:
-                    win['node'] = build_tree(win['element'], self, win['node'])
-                    layout(win['node'], 0, 0, self.canvas.width, self.canvas.height)
+                try:
+                    if self.needs_render or resized or win['node'] is None:
+                        win['node'] = build_tree(win['element'], self, win['node'])
+                        layout(win['node'], 0, 0, self.canvas.width, self.canvas.height)
+                except Exception as e:
+                    tb = traceback.format_exc()
+                    self.errors.log("ERROR", f"Window {i} render: {e}", tb)
+                    self.notify(f"⚠ Window {i} error: {type(e).__name__}")
+                    win['node'] = None
             
             # Draw windows from bottom to top
             for i, win in enumerate(self.windows):
-                if i > 0 and win['element'].props.get('dim', True):
-                    dim_style = tui_core.Style(15, 15, 15, 5, 5, 5, False)
-                    # Use fill_rect which is clipped
-                    self.canvas.fill_rect(0, 0, self.canvas.width, self.canvas.height, dim_style)
-                
-                if win['node']:
-                    draw_tree(win['node'], self.canvas)
+                try:
+                    if i > 0 and win['element'].props.get('dim', True):
+                        dim_style = tui_core.Style(15, 15, 15, 5, 5, 5, False)
+                        self.canvas.fill_rect(0, 0, self.canvas.width, self.canvas.height, dim_style)
+                    if win['node']:
+                        draw_tree(win['node'], self.canvas)
+                except Exception as e:
+                    tb = traceback.format_exc()
+                    self.errors.log("ERROR", f"Window {i} draw: {e}", tb)
 
             # Global Inspector Pass (ignores previous clip stacks)
             if self.show_inspector and self.hovered_node:
@@ -181,6 +223,9 @@ class App:
             # Draw Tooltips
             self._render_tooltip()
             
+            # Draw Error Log Overlay
+            self._render_error_log()
+            
             if self.renderer:
                 self.renderer.render(self.curr_buffer, self.next_buffer)
                 self.curr_buffer, self.next_buffer = self.next_buffer, self.curr_buffer
@@ -190,6 +235,8 @@ class App:
             self._pending_effects = []
             self._pending_effects_set.clear()
             self.needs_render = False
+            if self.notifications:
+                self.needs_render = True
             for instance, idx in effects:
                 instance.run_effect(idx)
         except Exception as e:
@@ -247,6 +294,39 @@ class App:
         self.canvas.fill_rect(x, y, w, h, style)
         self.canvas.draw_text(x + 1, y, text, style)
 
+    def _render_error_log(self):
+        if not self.show_error_log:
+            return
+        entries = self.errors.errors
+        if not entries:
+            return
+
+        w = min(70, self.canvas.width - 2)
+        h = min(20, self.canvas.height - 2)
+        x = (self.canvas.width - w) // 2
+        y = (self.canvas.height - h) // 2
+
+        bg = tui_core.Style(255, 255, 255, 20, 20, 30, False)
+        self.canvas.fill_rect(x, y, w, h, bg)
+        self.canvas.draw_rect(x, y, w, h, bg, 0)
+
+        header = " Error Log (F11/ESC close, UP/DOWN scroll) "
+        header_s = tui_core.Style(255, 200, 0, 20, 20, 30, False)
+        self.canvas.draw_text(x + 1, y + 1, header[:w-2], header_s)
+
+        scroll = self.error_log_scroll
+        visible = h - 3
+        for i, (ts, sev, msg, tb) in enumerate(entries[scroll:scroll + visible]):
+            line = f"[{sev}] {msg[:w-8]}"
+            if sev == 'FATAL':
+                fg = (255, 100, 100)
+            elif sev == 'ERROR':
+                fg = (255, 200, 0)
+            else:
+                fg = (200, 200, 200)
+            line_s = tui_core.Style(fg[0], fg[1], fg[2], 20, 20, 30, False)
+            self.canvas.draw_text(x + 1, y + 2 + i, line[:w-2], line_s)
+
     def stop(self):
         self._running = False
 
@@ -274,16 +354,58 @@ class App:
                         self.show_inspector = not self.show_inspector
                         self.request_render()
                         continue
+
+                    if isinstance(event, KeyEvent) and event.key == 'F11':
+                        self.show_error_log = not self.show_error_log
+                        self.error_log_scroll = 0
+                        self.request_render()
+                        continue
+
+                    if isinstance(event, KeyEvent) and self.show_error_log:
+                        if event.key == 'UP':
+                            self.error_log_scroll = max(0, self.error_log_scroll - 1)
+                            self.request_render()
+                            continue
+                        if event.key == 'DOWN':
+                            self.error_log_scroll += 1
+                            self.request_render()
+                            continue
+                        if event.key == 'ESC':
+                            self.show_error_log = False
+                            self.request_render()
+                            continue
                     
                     self.dispatch_event(event)
                 
                 time.sleep(0.01)
         except KeyboardInterrupt:
             pass
+        except Exception as e:
+            self.errors.log("FATAL", f"App crash: {e}", traceback.format_exc())
         finally:
             self.cleanup()
 
     def dispatch_event(self, event):
+        if isinstance(event, KeyEvent):
+            if event.key == 'F11':
+                self.show_error_log = not self.show_error_log
+                self.error_log_scroll = 0
+                self.request_render()
+                return
+            if self.show_error_log:
+                if event.key == 'UP':
+                    self.error_log_scroll = max(0, self.error_log_scroll - 1)
+                    self.request_render()
+                    return
+                if event.key == 'DOWN':
+                    self.error_log_scroll += 1
+                    self.request_render()
+                    return
+                if event.key == 'ESC':
+                    self.show_error_log = False
+                    self.request_render()
+                    return
+
         # We dispatch to the top-most window only
         if not self.windows: return
         win = self.windows[-1]

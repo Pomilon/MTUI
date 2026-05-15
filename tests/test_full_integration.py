@@ -615,6 +615,86 @@ def test_flex_grow_remaining_space():
     print("test_flex_grow_remaining_space PASSED")
 
 
+def test_error_log_basic():
+    from rc_tui.app import ErrorLog
+    import tempfile, os
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.log') as f:
+        log_path = f.name
+    try:
+        el = ErrorLog(log_path)
+        el.log("ERROR", "test error", "traceback details")
+        assert len(el.errors) == 1
+        assert el.errors[0][1] == "ERROR"
+        assert "test error" in el.errors[0][2]
+        with open(log_path) as f:
+            content = f.read()
+        assert "test error" in content
+        assert "traceback details" in content
+    finally:
+        os.unlink(log_path)
+    print("test_error_log_basic PASSED")
+
+
+def test_error_log_ring_buffer():
+    from rc_tui.app import ErrorLog
+    el = ErrorLog()
+    for i in range(60):
+        el.log("ERROR", f"error {i}")
+    assert len(el.errors) == 50
+    assert el.errors[0][2] == "error 10"
+    print("test_error_log_ring_buffer PASSED")
+
+
+def test_per_window_error_isolation():
+    from rc_tui import App
+    from rc_tui.core import Component
+
+    class MT:
+        def enable_raw_mode(self): pass
+        def enter_alternate_screen(self): pass
+        def enable_mouse_tracking(self): pass
+        def disable_raw_mode(self): pass
+        def exit_alternate_screen(self): pass
+        def disable_mouse_tracking(self): pass
+        def clear_screen(self): pass
+        def get_size(self): return (80, 24)
+
+    class CrashComponent(Component):
+        def render(self):
+            raise RuntimeError("intentional crash")
+
+    app = App(CrashComponent, terminal=MT())
+    app._step()
+    assert len(app.errors.errors) >= 1
+    assert "intentional crash" in app.errors.errors[-1][2]
+    app.cleanup()
+    print("test_per_window_error_isolation PASSED")
+
+
+def test_f11_error_log_overlay():
+    from rc_tui.input import KeyEvent
+    from rc_tui import App
+
+    class MT:
+        def enable_raw_mode(self): pass
+        def enter_alternate_screen(self): pass
+        def enable_mouse_tracking(self): pass
+        def disable_raw_mode(self): pass
+        def exit_alternate_screen(self): pass
+        def disable_mouse_tracking(self): pass
+        def clear_screen(self): pass
+        def get_size(self): return (80, 24)
+
+    app = App(None, terminal=MT())
+    assert not app.show_error_log
+    app.dispatch_event(KeyEvent('F11'))
+    assert app.show_error_log, "F11 should toggle show_error_log on"
+    app.dispatch_event(KeyEvent('F11'))
+    assert not app.show_error_log, "F11 should toggle show_error_log off"
+    app.cleanup()
+    print("test_f11_error_log_overlay PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -646,3 +726,7 @@ if __name__ == "__main__":
     test_min_max_constraints()
     test_content_h_always_set()
     test_flex_grow_remaining_space()
+    test_error_log_basic()
+    test_error_log_ring_buffer()
+    test_per_window_error_isolation()
+    test_f11_error_log_overlay()
