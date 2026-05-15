@@ -226,6 +226,41 @@ def test_justify_content_flex_start_default():
     print("test_justify_content_flex_start_default PASSED")
 
 
+def test_ref_wired_to_layout_node():
+    from rc_tui.reconciler import build_tree
+    from rc_tui.core import Element
+
+    ref_holder = {"value": None}
+    el = Element('box', {'ref': ref_holder}, [
+        Element('text', {'text': 'child'})
+    ])
+
+    class MockApp:
+        focused_node = None
+        windows = []
+
+    node = build_tree(el, MockApp())
+    assert ref_holder["value"] is not None, "ref.value was not set"
+    assert ref_holder["value"].type == 'box', f"Expected type 'box', got {ref_holder['value'].type}"
+    assert len(ref_holder["value"].children) == 1
+    print("test_ref_wired_to_layout_node PASSED")
+
+
+def test_ref_no_op_when_absent():
+    from rc_tui.reconciler import build_tree
+    from rc_tui.core import Element
+
+    class MockApp:
+        focused_node = None
+        windows = []
+
+    el = Element('box', {}, [])
+    node = build_tree(el, MockApp())
+    assert node is not None
+    assert node.type == 'box'
+    print("test_ref_no_op_when_absent PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -235,3 +270,5 @@ if __name__ == "__main__":
     test_justify_content_flex_end()
     test_align_items_center()
     test_justify_content_flex_start_default()
+    test_ref_wired_to_layout_node()
+    test_ref_no_op_when_absent()

@@ -171,7 +171,11 @@ def build_tree(element, app, old_node=None):
             if element.type == 'scrollbox':
                 node.scroll_y = old_node.scroll_y
                 node.scroll_x = old_node.scroll_x
-                
+
+        ref = element.props.get('ref')
+        if isinstance(ref, dict) and 'value' in ref:
+            ref['value'] = node
+
         return node
 
 def _unmount_node(node):
