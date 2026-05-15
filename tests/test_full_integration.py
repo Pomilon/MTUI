@@ -132,8 +132,106 @@ def test_button_keyboard_activation_with_event():
     print("test_button_keyboard_activation_with_event PASSED")
 
 
+def test_justify_content_center():
+    from rc_tui.layout import do_layout, measure
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+
+    parent = LayoutNode(Element('box', {
+        'flex_direction': 'column',
+        'width': 40,
+        'height': 20,
+        'justify_content': 'center'
+    }))
+    child = LayoutNode(Element('text', {'text': 'Hello\n\n'}))
+    parent.children = [child]
+
+    measure(parent, 40, 20)
+    do_layout(parent, 0, 0, 40, 20)
+
+    # With justify_content: center in a 20-high container with one 3-high child,
+    # remaining_space = 17, offset = 17/2 = 8 (integer division)
+    assert child.y == 8, f"Expected child.y=8, got {child.y}"
+    print("test_justify_content_center PASSED")
+
+
+def test_justify_content_flex_end():
+    from rc_tui.layout import do_layout, measure
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+
+    parent = LayoutNode(Element('box', {
+        'flex_direction': 'column',
+        'width': 40,
+        'height': 20,
+        'justify_content': 'flex-end'
+    }))
+    child = LayoutNode(Element('text', {'text': 'Hello\n\n'}))
+    parent.children = [child]
+
+    measure(parent, 40, 20)
+    do_layout(parent, 0, 0, 40, 20)
+
+    # remaining_space = 17, offset = 17
+    assert child.y == 17, f"Expected child.y=17, got {child.y}"
+    print("test_justify_content_flex_end PASSED")
+
+
+def test_align_items_center():
+    from rc_tui.layout import do_layout, measure
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+
+    parent = LayoutNode(Element('box', {
+        'flex_direction': 'row',
+        'width': 40,
+        'height': 10,
+        'align_items': 'center'
+    }))
+    child = LayoutNode(Element('text', {'text': 'Hi'}))
+    child.w = 2
+    child.h = 1
+    parent.children = [child]
+
+    measure(parent, 40, 10)
+    do_layout(parent, 0, 0, 40, 10)
+
+    # In a row, align_items controls vertical positioning.
+    # Container h=10, child h=1 with no padding/margin on container.
+    # remaining cross-axis = inner_h - ch = 10 - 1 = 9, offset = 9/2 = 4
+    assert child.y == 4, f"Expected child.y=4, got {child.y}"
+    print("test_align_items_center PASSED")
+
+
+def test_justify_content_flex_start_default():
+    from rc_tui.layout import do_layout, measure
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+
+    parent = LayoutNode(Element('box', {
+        'flex_direction': 'column',
+        'width': 40,
+        'height': 20,
+    }))
+    child = LayoutNode(Element('text', {'text': 'Hello'}))
+    child.w = 5
+    child.h = 3
+    parent.children = [child]
+
+    measure(parent, 40, 20)
+    do_layout(parent, 0, 0, 40, 20)
+
+    # Default flex-start: no offset
+    assert child.y == 0, f"Expected child.y=0 (default), got {child.y}"
+    print("test_justify_content_flex_start_default PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
     test_button_keyboard_no_on_click()
     test_button_keyboard_activation_with_event()
+    test_justify_content_center()
+    test_justify_content_flex_end()
+    test_align_items_center()
+    test_justify_content_flex_start_default()

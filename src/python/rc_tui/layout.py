@@ -180,13 +180,16 @@ def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_scre
     
     flex_dir = node.props.get('flex_direction', 'column')
     gap = node.props.get('gap', 0)
-    
+    justify = node.props.get('justify_content', 'flex-start')
+    align = node.props.get('align_items', 'stretch')
+
     flex_total = 0
     fixed_space = 0
-    
+
     child_measures = []
     non_null_children = [c for c in node.children if c is not None]
-    gap_count = max(0, len(non_null_children) - 1)
+    child_count = len(non_null_children)
+    gap_count = max(0, child_count - 1)
     fixed_space += gap_count * gap
 
     for child in non_null_children:
@@ -201,12 +204,24 @@ def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_scre
             else:
                 fixed_space += cw
             child_measures.append((child, cw, ch, 0))
-            
+
     remaining_space = max(0, (inner_h if flex_dir == 'column' else inner_w) - fixed_space)
-    
-    current_x = pl
-    current_y = pt
-    
+
+    justify_offset = 0
+    justify_gap = gap
+    if justify == 'center':
+        justify_offset = remaining_space // 2
+    elif justify == 'flex-end':
+        justify_offset = remaining_space
+    elif justify == 'space-between' and child_count > 1:
+        justify_gap = remaining_space // (child_count - 1)
+    elif justify == 'space-around' and child_count > 0:
+        justify_gap = remaining_space // child_count
+        justify_offset = justify_gap // 2
+
+    current_x = pl + (justify_offset if flex_dir == 'row' else 0)
+    current_y = pt + (justify_offset if flex_dir == 'column' else 0)
+
     for i, (child, cw, ch, grow) in enumerate(child_measures):
         if grow > 0:
             share = int(remaining_space * (grow / flex_total)) if flex_total > 0 else 0
@@ -217,15 +232,29 @@ def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_scre
                 cw = share
                 ch = inner_h
         else:
-            if flex_dir == 'column' and child.props.get('width') is None:
-                cw = inner_w
-            if flex_dir == 'row' and child.props.get('height') is None:
-                ch = inner_h
+            if flex_dir == 'column' and child.props.get('width') is None and align == 'stretch':
+                cw = max(cw, inner_w)
+            if flex_dir == 'row' and child.props.get('height') is None and align == 'stretch':
+                ch = max(ch, inner_h)
+
+        cross_offset = 0
+        if align == 'center':
+            if flex_dir == 'column':
+                cross_offset = (inner_w - cw) // 2
+            else:
+                cross_offset = (inner_h - ch) // 2
+        elif align == 'flex-end':
+            if flex_dir == 'column':
+                cross_offset = inner_w - cw
+            else:
+                cross_offset = inner_h - ch
                 
         scroll_off_y = node.scroll_y if node.type == 'scrollbox' else 0
         scroll_off_x = node.scroll_x if node.type == 'scrollbox' else 0
         
-        do_layout(child, current_x, current_y, cw, ch, node.screen_x - scroll_off_x, node.screen_y - scroll_off_y)
+        do_layout(child, current_x + (cross_offset if flex_dir == 'column' else 0),
+                  current_y + (cross_offset if flex_dir == 'row' else 0),
+                  cw, ch, node.screen_x - scroll_off_x, node.screen_y - scroll_off_y)
         
         if flex_dir == 'column':
             current_y += ch + gap
