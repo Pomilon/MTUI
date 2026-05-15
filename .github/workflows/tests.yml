@@ -46,6 +46,4 @@ jobs:
           python -c "import rc_tui; print('RC-TUI version:', rc_tui.__version__ if hasattr(rc_tui, '__version__') else '0.2.0')"
 
       - name: Run Unit Tests
-        run: |
-          cd tests
-          pytest test_advanced_styling.py test_styling.py test_framework.py
+        run: pytest tests/ -v
