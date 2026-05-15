@@ -1,6 +1,6 @@
 from .core import Element, Component
 from .reconciler import build_tree
-from .layout import measure, do_layout
+from .layout import layout
 from .render import draw_tree, draw_inspector
 from .input import InputManager, MouseEvent, KeyEvent
 from .canvas import Canvas
@@ -158,8 +158,7 @@ class App:
             for i, win in enumerate(self.windows):
                 if self.needs_render or resized or win['node'] is None:
                     win['node'] = build_tree(win['element'], self, win['node'])
-                    measure(win['node'], self.canvas.width, self.canvas.height)
-                    do_layout(win['node'], 0, 0, self.canvas.width, self.canvas.height)
+                    layout(win['node'], 0, 0, self.canvas.width, self.canvas.height)
             
             # Draw windows from bottom to top
             for i, win in enumerate(self.windows):

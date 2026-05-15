@@ -554,6 +554,67 @@ def test_effect_request_render_respected():
     print("test_effect_request_render_respected PASSED")
 
 
+def test_measure_pure_no_side_effects():
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.layout import measure as m
+    btn = LayoutNode(Element('button', {'text': 'Click'}))
+    old_w, old_h = btn.w, btn.h
+    cw, ch = m(btn, 100, 50)
+    assert btn.w == old_w, "measure should NOT modify w"
+    assert btn.h == old_h, "measure should NOT modify h"
+    assert cw > 0 and ch > 0
+    print("test_measure_pure_no_side_effects PASSED")
+
+
+def test_width_prop_enforced():
+    from rc_tui.layout import _apply_constraints
+    class MN: props = {'width': 40}
+    w, h = _apply_constraints(MN(), 80, 24)
+    assert w == 40, f"width=40 should clamp to 40, got {w}"
+    assert h == 24, f"height should be avail_h when no constraint"
+    print("test_width_prop_enforced PASSED")
+
+
+def test_min_max_constraints():
+    from rc_tui.layout import _apply_constraints
+    class MN: props = {'min_width': 10, 'max_width': 30}
+    w, _ = _apply_constraints(MN(), 5, 24)
+    assert w == 10, f"min_width should clamp 5->10, got {w}"
+    w, _ = _apply_constraints(MN(), 50, 24)
+    assert w == 30, f"max_width should clamp 50->30, got {w}"
+    print("test_min_max_constraints PASSED")
+
+
+def test_content_h_always_set():
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.layout import layout
+    box = LayoutNode(Element('box', {}, []))
+    text = LayoutNode(Element('text', {'text': 'hello'}))
+    text.parent = box
+    box.children = [text]
+    layout(box, 0, 0, 80, 24)
+    assert box.content_h >= 1
+    assert text.w > 0
+    assert text.h > 0
+    print("test_content_h_always_set PASSED")
+
+
+def test_flex_grow_remaining_space():
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.layout import layout
+    parent = LayoutNode(Element('box', {'flex_direction': 'column', 'width': 40, 'height': 20}))
+    c1 = LayoutNode(Element('box', {'height': 5}))
+    c2 = LayoutNode(Element('box', {'flex_grow': 1}))
+    c1.parent = parent; c2.parent = parent
+    parent.children = [c1, c2]
+    layout(parent, 0, 0, 40, 20)
+    assert c2.h >= 10, f"flex_grow child should get remaining space, got h={c2.h}"
+    print("test_flex_grow_remaining_space PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -580,3 +641,8 @@ if __name__ == "__main__":
     test_app_context_manager()
     test_set_state_change_detection()
     test_effect_request_render_respected()
+    test_measure_pure_no_side_effects()
+    test_width_prop_enforced()
+    test_min_max_constraints()
+    test_content_h_always_set()
+    test_flex_grow_remaining_space()

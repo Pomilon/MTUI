@@ -1,4 +1,4 @@
-from .layout import parse_dim as layout_parse_dim, get_spacing as layout_get_spacing
+from .layout import parse_dim as layout_parse_dim
 from . import tui_core
 
 _MEASURE = {}
@@ -22,48 +22,43 @@ def _measure_span(node, max_w, max_h):
 def _measure_input(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 20)
     h = layout_parse_dim(h_prop, max_h) if h_prop is not None else 1
-    return w + pl + pr + ml + mr, h + pt + pb + mt + mb
+    return w, h
 
 
 def _measure_textarea(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 20)
     h = layout_parse_dim(h_prop, max_h) if h_prop is not None else 5
-    return w + pl + pr + ml + mr, h + pt + pb + mt + mb
+    return w, h
 
 
 def _measure_progressbar(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 20)
     h = layout_parse_dim(h_prop, max_h) if h_prop is not None else 1
-    return w + pl + pr + ml + mr, h + pt + pb + mt + mb
+    return w, h
 
 
 def _measure_button(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
     text = str(node.props.get('text', ''))
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (len(text) + 4)
     h = layout_parse_dim(h_prop, max_h) if h_prop is not None else 1
-    return w + pl + pr + ml + mr, h + pt + pb + mt + mb
+    return w, h
 
 
 def _measure_checkbox(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
     label = str(node.props.get('label', ''))
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (len(label) + 4)
     h = layout_parse_dim(h_prop, max_h) if h_prop is not None else 1
-    return w + pl + pr + ml + mr, h + pt + pb + mt + mb
+    return w, h
 
 
 def _measure_divider(node, max_w, max_h):
@@ -74,42 +69,37 @@ def _measure_divider(node, max_w, max_h):
 def _measure_radiobutton(node, max_w, max_h):
     w_prop = node.props.get('width')
     label = str(node.props.get('label', ''))
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (len(label) + 4)
-    return w + ml + mr, 1 + mt + mb
+    return w, 1
 
 
 def _measure_switch(node, max_w, max_h):
     w_prop = node.props.get('width')
     label = str(node.props.get('label', ''))
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (len(label) + 10)
-    return w + ml + mr, 1 + mt + mb
+    return w, 1
 
 
 def _measure_select(node, max_w, max_h):
     w_prop = node.props.get('width')
     options = node.props.get('options', [])
     max_opt_w = max((len(str(o)) for o in options), default=0)
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (max_opt_w + 6)
-    return w + pl + pr + ml + mr, 1 + pt + pb + mt + mb
+    return w, 1
 
 
 def _measure_tabselect(node, max_w, max_h):
     options = node.props.get('options', [])
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     total_w = sum(len(str(o)) + 4 for o in options)
-    return total_w + ml + mr, 1 + mt + mb
+    return total_w, 1
 
 
 def _measure_code(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 40)
     h = layout_parse_dim(h_prop, max_h) if h_prop is not None else 10
-    return w + ml + mr, h + mt + mb
+    return w, h
 
 
 def _measure_diff(node, max_w, max_h):
@@ -120,10 +110,9 @@ def _measure_markdown(node, max_w, max_h):
     w_prop = node.props.get('width')
     h_prop = node.props.get('height')
     content = str(node.props.get('content', ''))
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
     w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 40)
     h = layout_parse_dim(h_prop, max_h) if h_prop is not None else len(content.split('\n')) + 2
-    return w + ml + mr, h + mt + mb
+    return w, h
 
 
 def _measure_linenumber(node, max_w, max_h):
@@ -134,8 +123,7 @@ def _measure_linenumber(node, max_w, max_h):
 
 def _measure_asciifont(node, max_w, max_h):
     w_prop = node.props.get('width')
-    (pt, pb, pl, pr), (mt, mb, ml, mr) = layout_get_spacing(node)
-    return (max_w or 40) + ml + mr, 5 + mt + mb
+    return (max_w or 40), 5
 
 
 def _measure_toast(node, max_w, max_h):

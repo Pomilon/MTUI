@@ -8,24 +8,37 @@ def parse_dim(val, parent_dim):
 def get_spacing(node):
     pad = node.props.get('padding', 0)
     mar = node.props.get('margin', 0)
-    
+
     pad_t = node.props.get('padding_top', pad)
     pad_b = node.props.get('padding_bottom', pad)
     pad_l = node.props.get('padding_left', pad)
     pad_r = node.props.get('padding_right', pad)
-    
+
     mar_t = node.props.get('margin_top', mar)
     mar_b = node.props.get('margin_bottom', mar)
     mar_l = node.props.get('margin_left', mar)
     mar_r = node.props.get('margin_right', mar)
-    
+
     if node.props.get('border'):
         pad_t += 1
         pad_b += 1
         pad_l += 1
         pad_r += 1
-        
+
     return (pad_t, pad_b, pad_l, pad_r), (mar_t, mar_b, mar_l, mar_r)
+
+
+def _apply_constraints(node, avail_w, avail_h):
+    w_prop = node.props.get('width')
+    h_prop = node.props.get('height')
+    w = parse_dim(w_prop, avail_w) if w_prop is not None else avail_w
+    h = parse_dim(h_prop, avail_h) if h_prop is not None else avail_h
+    min_w = node.props.get('min_width', 0)
+    max_w = node.props.get('max_width', avail_w)
+    min_h = node.props.get('min_height', 0)
+    max_h = node.props.get('max_height', avail_h)
+    return max(min_w, min(w, max_w)), max(min_h, min(h, max_h))
+
 
 def measure(node, max_w, max_h):
     if node.type in ('text', 'span'):
@@ -38,39 +51,24 @@ def measure(node, max_w, max_h):
     from .widgets import _MEASURE
     handler = _MEASURE.get(node.type)
     if handler:
-        w, h = handler(node, max_w, max_h)
-        node.w = w
-        node.h = h
-        return w, h
+        return handler(node, max_w, max_h)
 
     (pt, pb, pl, pr), (mt, mb, ml, mr) = get_spacing(node)
-
-    w_prop = node.props.get('width')
-    h_prop = node.props.get('height')
-
-    # Container measurement (box, scrollbox, and any unregistered types)
-    # Dialog/modal need centering positioning — keep the old logic
-    if node.type in ('dialog', 'modal'):
-        w = parse_dim(w_prop, max_w) if w_prop is not None else (max_w // 2 if max_w else 40)
-        h = parse_dim(h_prop, max_h) if h_prop is not None else (max_h // 2 if max_h else 10)
-        measured_w, measured_h = w, h
-    else:
-        w = parse_dim(w_prop, max_w)
-        h = parse_dim(h_prop, max_h)
-
-    if w is not None and h is not None and node.type not in ('dialog', 'modal', 'box', 'scrollbox'):
-        node.w = w + pl + pr + ml + mr
-        node.h = h + pt + pb + mt + mb
-        return node.w, node.h
-
-    flex_dir = node.props.get('flex_direction', 'column')
     inner_max_w = max_w - pl - pr - ml - mr if max_w is not None else None
     inner_max_h = max_h - pt - pb - mt - mb if max_h is not None else None
 
+    if inner_max_h is not None and inner_max_h <= 0:
+        return 0, 0
+    if inner_max_w is not None and inner_max_w <= 0:
+        return 0, 0
+
+    flex_dir = node.props.get('flex_direction', 'column')
     measured_w = 0
     measured_h = 0
 
     for child in node.children:
+        if child is None:
+            continue
         cw, ch = measure(child, inner_max_w, inner_max_h)
         if flex_dir == 'column':
             measured_w = max(measured_w, cw)
@@ -79,124 +77,145 @@ def measure(node, max_w, max_h):
             measured_w += cw
             measured_h = max(measured_h, ch)
 
-    if w is None:
+    w_prop = node.props.get('width')
+    h_prop = node.props.get('height')
+    if w_prop is not None:
+        w = parse_dim(w_prop, max_w)
+    else:
         w = measured_w + pl + pr + ml + mr
-    if h is None:
+    if h_prop is not None:
+        h = parse_dim(h_prop, max_h)
+    else:
         h = measured_h + pt + pb + mt + mb
-
-    node.w = w
-    node.h = h
-    node.content_w = measured_w
-    node.content_h = measured_h
     return w, h
 
-def do_layout(node, x, y, assigned_w, assigned_h, parent_screen_x=0, parent_screen_y=0):
-    if node.type in ('dialog', 'modal'):
-        if node.props.get('x') is None:
-            x = (assigned_w - node.w) // 2
-        else:
-            x = parse_dim(node.props.get('x'), assigned_w)
-            
-        if node.props.get('y') is None:
-            y = (assigned_h - node.h) // 2
-        else:
-            y = parse_dim(node.props.get('y'), assigned_h)
-            
-        assigned_w = node.w
-        assigned_h = node.h
 
+def layout(node, x, y, avail_w, avail_h, parent_screen_x=0, parent_screen_y=0):
     (pt, pb, pl, pr), (mt, mb, ml, mr) = get_spacing(node)
 
-    # Note: assigned_w includes margin
+    if node.type in ('dialog', 'modal'):
+        cw, ch = measure(node, avail_w, avail_h)
+        if node.props.get('x') is None:
+            x = (avail_w - cw) // 2
+        if node.props.get('y') is None:
+            y = (avail_h - ch) // 2
+        avail_w = cw
+        avail_h = ch
+
+    assigned_w, assigned_h = _apply_constraints(node, avail_w - ml - mr, avail_h - mt - mb)
+
     node.x = x + ml
     node.y = y + mt
-    node.w = assigned_w - ml - mr
-    node.h = assigned_h - mt - mb
+    node.w = assigned_w
+    node.h = assigned_h
     node.screen_x = parent_screen_x + node.x
     node.screen_y = parent_screen_y + node.y
-    
+
     inner_w = node.w - pl - pr
     inner_h = node.h - pt - pb
-    
+
+    if inner_w <= 0 or inner_h <= 0:
+        node.content_w = 0
+        node.content_h = 0
+        return
+
+    if not node.children:
+        node.content_w = 0
+        node.content_h = 0
+        return
+
+    child_data = []
+    for child in node.children:
+        if child is None:
+            continue
+        grow = child.props.get('flex_grow', 0)
+        cw, ch = measure(child, inner_w, inner_h)
+        child_data.append((child, cw, ch, grow))
+
     flex_dir = node.props.get('flex_direction', 'column')
     gap = node.props.get('gap', 0)
     justify = node.props.get('justify_content', 'flex-start')
     align = node.props.get('align_items', 'stretch')
 
     flex_total = 0
-    fixed_space = 0
-
-    child_measures = []
-    non_null_children = [c for c in node.children if c is not None]
-    child_count = len(non_null_children)
-    gap_count = max(0, child_count - 1)
-    fixed_space += gap_count * gap
-
-    for child in non_null_children:
-        grow = child.props.get('flex_grow', 0)
+    fixed_main = 0
+    for child, cw, ch, grow in child_data:
         if grow > 0:
             flex_total += grow
-            child_measures.append((child, 0, 0, grow))
         else:
-            cw, ch = measure(child, inner_w, inner_h)
-            if flex_dir == 'column':
-                fixed_space += ch
-            else:
-                fixed_space += cw
-            child_measures.append((child, cw, ch, 0))
+            fixed_main += ch if flex_dir == 'column' else cw
 
-    remaining_space = max(0, (inner_h if flex_dir == 'column' else inner_w) - fixed_space)
+    gap_count = max(0, len(child_data) - 1)
+    fixed_main += gap_count * gap
+    available_main = inner_h if flex_dir == 'column' else inner_w
+    remaining = max(0, available_main - fixed_main)
 
     justify_offset = 0
     justify_gap = gap
     if justify == 'center':
-        justify_offset = remaining_space // 2
+        justify_offset = remaining // 2
     elif justify == 'flex-end':
-        justify_offset = remaining_space
-    elif justify == 'space-between' and child_count > 1:
-        justify_gap = remaining_space // (child_count - 1)
-    elif justify == 'space-around' and child_count > 0:
-        justify_gap = remaining_space // child_count
+        justify_offset = remaining
+    elif justify == 'space-between' and len(child_data) > 1:
+        justify_gap = remaining // (len(child_data) - 1)
+    elif justify == 'space-around' and len(child_data) > 0:
+        justify_gap = remaining // len(child_data)
         justify_offset = justify_gap // 2
 
     current_x = pl + (justify_offset if flex_dir == 'row' else 0)
     current_y = pt + (justify_offset if flex_dir == 'column' else 0)
+    content_w = 0
+    content_h = 0
 
-    for i, (child, cw, ch, grow) in enumerate(child_measures):
+    for child, cw, ch, grow in child_data:
         if grow > 0:
-            share = int(remaining_space * (grow / flex_total)) if flex_total > 0 else 0
+            share = int(remaining * (grow / flex_total)) if flex_total > 0 else 0
             if flex_dir == 'column':
-                ch = share
-                cw = inner_w
+                child_h = share
+                child_w = inner_w
             else:
-                cw = share
-                ch = inner_h
+                child_w = share
+                child_h = inner_h
         else:
+            child_w = cw
+            child_h = ch
             if flex_dir == 'column' and child.props.get('width') is None and align == 'stretch':
-                cw = inner_w
+                child_w = inner_w
             if flex_dir == 'row' and child.props.get('height') is None and align == 'stretch':
-                ch = inner_h
+                child_h = inner_h
 
         cross_offset = 0
         if align == 'center':
             if flex_dir == 'column':
-                cross_offset = (inner_w - cw) // 2
+                cross_offset = (inner_w - child_w) // 2
             else:
-                cross_offset = (inner_h - ch) // 2
+                cross_offset = (inner_h - child_h) // 2
         elif align == 'flex-end':
             if flex_dir == 'column':
-                cross_offset = inner_w - cw
+                cross_offset = inner_w - child_w
             else:
-                cross_offset = inner_h - ch
-                
+                cross_offset = inner_h - child_h
+
         scroll_off_y = node.scroll_y if node.type == 'scrollbox' else 0
         scroll_off_x = node.scroll_x if node.type == 'scrollbox' else 0
-        
-        do_layout(child, current_x + (cross_offset if flex_dir == 'column' else 0),
-                  current_y + (cross_offset if flex_dir == 'row' else 0),
-                  cw, ch, node.screen_x - scroll_off_x, node.screen_y - scroll_off_y)
-        
+
+        layout(child,
+               current_x + (cross_offset if flex_dir == 'column' else 0),
+               current_y + (cross_offset if flex_dir == 'row' else 0),
+               child_w, child_h,
+               node.screen_x - scroll_off_x, node.screen_y - scroll_off_y)
+
         if flex_dir == 'column':
-            current_y += ch + gap
+            current_y += child_h + gap
+            content_w = max(content_w, child_w)
+            content_h += child_h
         else:
-            current_x += cw + gap
+            current_x += child_w + gap
+            content_w += child_w
+            content_h = max(content_h, child_h)
+
+    node.content_w = content_w
+    node.content_h = content_h
+
+
+do_layout = layout
