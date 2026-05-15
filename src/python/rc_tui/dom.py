@@ -186,43 +186,42 @@ def Slider(**kwargs):
 def Timeline(**kwargs):
     return Element('timeline', kwargs)
 
-def VirtualListClass(props):
-    from .hooks import useState
-    
-    items = props.get('items', [])
-    render_item = props.get('render_item')
-    item_height = props.get('item_height', 1)
-    
-    scroll_y, set_scroll_y = useState(0)
-    view_h, set_view_h = useState(props.get('height', 15)) 
-    
-    def on_scroll_callback(y, h=None):
-        set_scroll_y(y)
-        if h is not None:
-            set_view_h(h)
-    
-    # Calculate visible range with a small buffer (1 item above/below)
-    start_idx = max(0, int(scroll_y // item_height) - 1)
-    end_idx = min(len(items), int((scroll_y + view_h) // item_height) + 2)
-    
-    children = []
-    # Spacer at top
-    if start_idx > 0:
-        children.append(Box(height=start_idx * item_height))
-        
-    # Visible items
-    for i in range(start_idx, end_idx):
-        children.append(render_item(items[i], i))
-        
-    # Spacer at bottom
-    if end_idx < len(items):
-        children.append(Box(height=(len(items) - end_idx) * item_height))
-        
-    return ScrollBox(
-        children=children,
-        on_scroll=on_scroll_callback,
-        **{k:v for k,v in props.items() if k not in ('items', 'render_item', 'item_height', 'on_scroll')}
-    )
+class VirtualListClass(Component):
+    def __init__(self, props):
+        super().__init__(props)
+        self.state = {'scroll_y': 0, 'view_h': 0}
+
+    def render(self):
+        items = self.props.get('items', [])
+        render_item = self.props.get('render_item')
+        item_height = self.props.get('item_height', 1)
+        scroll_y = self.state.get('scroll_y', 0)
+        view_h = self.state.get('view_h', 0)
+
+        def on_scroll_callback(y, h=None):
+            self.state['scroll_y'] = y
+            if h is not None:
+                self.state['view_h'] = h
+            if self.app:
+                self.app.request_render()
+
+        start_idx = max(0, int(scroll_y // item_height) - 1)
+        end_idx = min(len(items), int((scroll_y + view_h) // item_height) + 2)
+
+        children = []
+        if start_idx > 0:
+            children.append(Box(height=start_idx * item_height))
+        for i in range(start_idx, end_idx):
+            children.append(render_item(items[i], i))
+        if end_idx < len(items):
+            children.append(Box(height=(len(items) - end_idx) * item_height))
+
+        return ScrollBox(
+            children=children,
+            on_scroll=on_scroll_callback,
+            **{k: v for k, v in self.props.items()
+               if k not in ('items', 'render_item', 'item_height', 'on_scroll')}
+        )
 
 def VirtualList(**kwargs):
     return Element(VirtualListClass, kwargs)

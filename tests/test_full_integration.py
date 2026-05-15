@@ -464,6 +464,14 @@ def test_scrollbar_click():
     print("test_scrollbar_click PASSED")
 
 
+def test_virtuallist_as_component():
+    from rc_tui.dom import VirtualList
+    el = VirtualList(items=list(range(100)), render_item=lambda item, i: None)
+    assert el is not None
+    assert el.type is not None  # Should be VirtualListClass
+    print("test_virtuallist_as_component PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -485,3 +493,4 @@ if __name__ == "__main__":
     test_textarea_cursor_navigation()
     test_textarea_insert_at_cursor()
     test_scrollbar_click()
+    test_virtuallist_as_component()
