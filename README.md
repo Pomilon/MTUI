@@ -1,26 +1,38 @@
 # rc-tui
 
-**rc-tui** is a high-performance, React-inspired Terminal User Interface (TUI) library for Python. It combines the declarative power of modern web frameworks with a high-performance C++ rendering engine to create fluid, beautiful, and complex terminal applications.
+**rc-tui** is a high-performance, React-inspired Terminal User Interface (TUI) library for Python. It combines declarative components and hooks with a C++ rendering engine for fluid terminal applications.
 
 ## Why rc-tui?
 
-- **Declarative & Component-Based**: Build your UI with functional components and hooks (`useState`, `useEffect`).
-- **Hybrid Performance**: High-frequency render logic and terminal diffing are in C++; layout and logic are in Python.
-- **Advanced Styling**: Web-standard colors (Hex, RGB), pseudo-classes (`hover`, `focus`), and rich text attributes.
-- **Cross-Platform**: Fully supports Linux, macOS, and Windows 10+ (Verified via CI/CD).
+- **Declarative & Component-Based** — Build UIs with components, hooks, and a flexbox layout engine. Familiar if you know React.
+- **Hybrid Performance** — Render logic and terminal diffing in C++; layout and component logic in Python.
+- **Rich Styling** — Hex and RGB colors, style inheritance, pseudo-classes (`hover`, `focus`), and text transforms.
+- **30+ Widgets** — From buttons and inputs to tables, virtual lists, markdown renderer, and modals.
+- **Cross-Platform** — Linux, macOS, and Windows 10+.
 
-## Key Features (v0.2.0)
+## Key Features (v0.3.0)
 
-- **Rich Styling**: Hex colors, inheritance, `box_shadow`, and `text_transform`.
-- **Interactive Pseudo-classes**: Define `hover_style` and `focus_style` for responsive components.
-- **Full Mouse Support**: Real-time motion tracking for hovers and tooltips.
-- **Flexbox Layout**: Powerful layout engine with `gap`, `flex_grow`, and percentage dimensions.
-- **Markdown & Code**: Built-in support for Markdown and syntax-highlighted code blocks (via Tree-sitter).
+- **Component Model** — Class-based and functional components with key-based reconciliation.
+- **Hooks** — `useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, `useWindowSize`.
+- **Flexbox Layout** — Column/row layout with `flex_grow`, `gap`, `justify_content`, `align_items`, padding, margin, and percentage dimensions.
+- **Keyboard Navigation** — Tab to cycle focus, Space/Enter to activate buttons and toggles. Focus trapped inside modals.
+- **Rich Styling** — Hex and RGB colors, style arrays, `hover_style`/`focus_style` pseudo-classes, `box_shadow`, `text_transform`.
+- **Full Mouse Support** — Click, scroll, hover tracking, tooltips.
+- **Window Management** — Stack-based windows, dialogs, modals with auto-dim background.
+- **Advanced Widgets** — `Table` (sortable), `VirtualList` (windowed for large datasets), `Markdown`, `Code` (syntax-highlighted via Tree-sitter), `Accordion`, `Slider`, `Timeline`.
+- **Refs** — `useRef` wired to `LayoutNode` for imperative access (v0.3.0).
+- **StyleSheet Validation** — `StyleSheet.create` validates prop names and types at definition time (v0.3.0).
 
 ## Installation
 
 ```bash
 pip install rc-tui
+```
+
+For development:
+
+```bash
+pip install -e .
 ```
 
 ## Quick Start
@@ -37,7 +49,7 @@ class Counter(Component):
             align_items="center",
             gap=1,
             border="rounded",
-            padding=1,
+            padding=2,
             children=[
                 Text(f"Value: {count}", style={'bold': True, 'fg': 'cyan'}),
                 Button(
@@ -52,53 +64,30 @@ if __name__ == "__main__":
     App(Counter).run()
 ```
 
-## Advanced Styling
-
-```python
-Text("Polished Text", style={
-    'fg': '#ff00ff',           # Hex colors
-    'italic': True,             # Rich attributes
-    'text_transform': 'uppercase',
-    'hover_style': {'fg': 'white', 'bold': True}
-})
-```
+Press **Tab** to cycle focus, **Space**/**Enter** to activate the button, **F12** for the inspector overlay.
 
 ## Platform Support
 
-| Platform | Support Status | Notes |
-| :--- | :--- | :--- |
-| **Linux** | ✅ Fully Supported | Primary development platform. |
-| **macOS** | ✅ Supported | Verified via CI/CD. |
-| **Windows** | ✅ Supported | Verified via CI/CD. Requires Windows 10+. |
+| Platform | Status |
+|---|---|
+| **Linux** | ✅ Fully supported |
+| **macOS** | ✅ Supported (CI-verified) |
+| **Windows** | ✅ Supported (CI-verified, 10+) |
 
 ## Documentation
 
 - [Architecture Reference](./docs/architecture.md)
-- [Component & Props API](./docs/components.md)
-- [Hooks API](./docs/hooks.md)
-- [Event System](./docs/events.md)
-
-## Examples
-
-Check out the [examples/](./examples) directory:
-- `counter.py`: Basic state management.
-- `styling_showcase.py`: Comprehensive styling engine demo.
-- `dashboard.py`: Layout and progress indicators.
+- [Component & Props API](./docs/components.md) — all 30+ widgets, layout props, styling, refs
+- [Hooks API](./docs/hooks.md) — useState, useEffect, useRef, useMemo, useCallback, useWindowSize
+- [Event System](./docs/events.md) — keyboard, mouse, focus management, modal trapping
 
 ## Running Demos
-
-After installing, run the demo scripts directly — no local path setup needed:
 
 ```bash
 python tests/demo_app.py
 python tests/demo_stylesheet.py
 python tests/demo_features.py
-```
-
-For development, install in editable mode so changes take effect immediately:
-
-```bash
-pip install -e .
+python tests/demo_features_v2.py
 ```
 
 ## License
