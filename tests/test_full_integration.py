@@ -391,6 +391,54 @@ def test_widget_dispatch_integration():
     print("test_widget_dispatch_integration PASSED")
 
 
+def test_textarea_cursor_navigation():
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.widgets import _KEY
+    from rc_tui.input import KeyEvent
+
+    ta = LayoutNode(Element('textarea', {'value': 'abc\ndef\nghi'}))
+    ta.props['cursor_x'] = 1
+    ta.props['cursor_y'] = 1
+
+    _KEY['textarea'](ta, KeyEvent('RIGHT'))
+    assert ta.props.get('cursor_x') == 2, f"Expected cursor_x=2, got {ta.props.get('cursor_x')}"
+    assert ta.props.get('cursor_y') == 1
+
+    _KEY['textarea'](ta, KeyEvent('DOWN'))
+    assert ta.props['cursor_y'] == 2, f"Expected cursor_y=2"
+    assert ta.props['cursor_x'] == min(2, len('ghi')), f"cursor_x should clamp to line len"
+
+    _KEY['textarea'](ta, KeyEvent('UP'))
+    assert ta.props['cursor_y'] == 1, f"Expected cursor_y=1"
+
+    _KEY['textarea'](ta, KeyEvent('HOME'))
+    assert ta.props['cursor_x'] == 0, f"Expected cursor_x=0 after HOME"
+
+    print("test_textarea_cursor_navigation PASSED")
+
+
+def test_textarea_insert_at_cursor():
+    from rc_tui.reconciler import LayoutNode
+    from rc_tui.core import Element
+    from rc_tui.widgets import _KEY
+    from rc_tui.input import KeyEvent
+
+    ta = LayoutNode(Element('textarea', {'value': 'hello'}))
+    ta.props['cursor_x'] = 2
+    ta.props['cursor_y'] = 0
+
+    _KEY['textarea'](ta, KeyEvent('X'))
+    assert ta.props.get('value') == 'heXllo', f"Expected 'heXllo', got {ta.props.get('value')}"
+    assert ta.props['cursor_x'] == 3
+
+    _KEY['textarea'](ta, KeyEvent('HOME'))
+    _KEY['textarea'](ta, KeyEvent('A'))
+    assert ta.props.get('value') == 'AheXllo'
+
+    print("test_textarea_insert_at_cursor PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -409,3 +457,5 @@ if __name__ == "__main__":
     test_stylesheet_create_warns_unknown()
     test_widget_registry()
     test_widget_dispatch_integration()
+    test_textarea_cursor_navigation()
+    test_textarea_insert_at_cursor()

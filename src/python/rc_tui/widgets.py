@@ -187,12 +187,16 @@ def _draw_tabselect(node, canvas, style):
 def _draw_textarea(node, canvas, style):
     val = str(node.props.get('value', ''))
     lines = val.split('\n')
-    for i, line in enumerate(lines[:node.h]):
+    scroll_y = node.scroll_y if hasattr(node, 'scroll_y') else 0
+    for i, line in enumerate(lines[scroll_y:scroll_y + node.h]):
         canvas.draw_text(node.screen_x, node.screen_y + i, line[:node.w], style)
     if node.is_focused:
-        cursor_y = min(len(lines) - 1, node.h - 1)
-        cursor_x = min(len(lines[cursor_y]), node.w - 1)
-        canvas.draw_text(node.screen_x + cursor_x, node.screen_y + cursor_y, "_", style)
+        cursor_x = node.props.get('cursor_x', 0)
+        cursor_y = node.props.get('cursor_y', 0)
+        vis_y = cursor_y - scroll_y
+        if 0 <= vis_y < node.h:
+            display_x = min(cursor_x, node.w - 1)
+            canvas.draw_text(node.screen_x + display_x, node.screen_y + vis_y, '_', style)
 
 
 def _draw_code(node, canvas, style):
@@ -507,22 +511,68 @@ def _key_input(node, event):
 
 
 def _key_textarea(node, event):
-    val = node.props.get('value', '')
-    if event.key == 'BACKSPACE':
-        if val:
-            val = val[:-1]
+    val = str(node.props.get('value', ''))
+    lines = val.split('\n')
+    cursor_x = node.props.get('cursor_x', len(lines[-1]) if lines else 0)
+    cursor_y = node.props.get('cursor_y', max(0, len(lines) - 1))
+
+    if event.key == 'LEFT':
+        if cursor_x > 0:
+            cursor_x -= 1
+        elif cursor_y > 0:
+            cursor_y -= 1
+            cursor_x = len(lines[cursor_y])
+    elif event.key == 'RIGHT':
+        if cursor_x < len(lines[cursor_y]):
+            cursor_x += 1
+        elif cursor_y < len(lines) - 1:
+            cursor_y += 1
+            cursor_x = 0
+    elif event.key == 'UP' and cursor_y > 0:
+        cursor_y -= 1
+        cursor_x = min(cursor_x, len(lines[cursor_y]))
+    elif event.key == 'DOWN' and cursor_y < len(lines) - 1:
+        cursor_y += 1
+        cursor_x = min(cursor_x, len(lines[cursor_y]))
+    elif event.key == 'HOME':
+        cursor_x = 0
+    elif event.key == 'END':
+        cursor_x = len(lines[cursor_y])
+    elif event.key == 'BACKSPACE':
+        if cursor_x > 0:
+            line = lines[cursor_y]
+            lines[cursor_y] = line[:cursor_x - 1] + line[cursor_x:]
+            cursor_x -= 1
+            val = '\n'.join(lines)
+        elif cursor_y > 0:
+            prev_line = lines[cursor_y - 1]
+            cursor_x = len(prev_line)
+            lines[cursor_y - 1] = prev_line + lines[cursor_y]
+            del lines[cursor_y]
+            cursor_y -= 1
+            val = '\n'.join(lines)
     elif event.key == 'ENTER':
-        val += '\n'
+        line = lines[cursor_y]
+        lines[cursor_y] = line[:cursor_x]
+        lines.insert(cursor_y + 1, line[cursor_x:])
+        cursor_y += 1
+        cursor_x = 0
+        val = '\n'.join(lines)
     elif len(event.key) == 1:
-        val += event.key
+        line = lines[cursor_y]
+        lines[cursor_y] = line[:cursor_x] + event.key + line[cursor_x:]
+        cursor_x += 1
+        val = '\n'.join(lines)
     else:
         return False
 
-    if val != node.props.get('value'):
-        node.props['value'] = val
-        on_change = node.props.get('on_change')
-        if on_change:
-            on_change(val)
+    node.props['value'] = val
+    node.props['cursor_x'] = cursor_x
+    node.props['cursor_y'] = cursor_y
+
+    on_change = node.props.get('on_change')
+    if on_change:
+        on_change(val)
     return True
 
 

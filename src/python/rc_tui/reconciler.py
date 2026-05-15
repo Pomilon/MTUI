@@ -167,6 +167,9 @@ def build_tree(element, app, old_node=None):
                 
             if element.type in ('input', 'textarea'):
                 node.props['value'] = old_node.props.get('value', element.props.get('value', ''))
+                if element.type == 'textarea':
+                    node.props['cursor_x'] = old_node.props.get('cursor_x', 0)
+                    node.props['cursor_y'] = old_node.props.get('cursor_y', 0)
             
             if element.type == 'scrollbox':
                 node.scroll_y = old_node.scroll_y
