@@ -526,6 +526,34 @@ def test_set_state_change_detection():
     print("test_set_state_change_detection PASSED")
 
 
+def test_effect_request_render_respected():
+    from rc_tui.app import App
+
+    class _MT:
+        def enable_raw_mode(self): pass
+        def enter_alternate_screen(self): pass
+        def enable_mouse_tracking(self): pass
+        def disable_raw_mode(self): pass
+        def exit_alternate_screen(self): pass
+        def disable_mouse_tracking(self): pass
+        def clear_screen(self): pass
+        def get_size(self): return (80, 24)
+
+    app = App(None, terminal=_MT())
+    app._pending_effects = []
+    app._pending_effects_set = set()
+    app.needs_render = False
+
+    inst = type('Inst', (), {'_hooks': [], 'app': app, 'run_effect': lambda self, idx: self.app.request_render()})()
+
+    app._pending_effects.append((inst, 0))
+    app._step()
+
+    assert app.needs_render, "After effect calls request_render, needs_render should be True"
+    app.cleanup()
+    print("test_effect_request_render_respected PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -551,3 +579,4 @@ if __name__ == "__main__":
     test_effect_dedup()
     test_app_context_manager()
     test_set_state_change_detection()
+    test_effect_request_render_respected()

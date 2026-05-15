@@ -186,16 +186,15 @@ class App:
                 self.renderer.render(self.curr_buffer, self.next_buffer)
                 self.curr_buffer, self.next_buffer = self.next_buffer, self.curr_buffer
             
-            self.needs_render = False
             # Run pending effects after paint
             effects = self._pending_effects
             self._pending_effects = []
             self._pending_effects_set.clear()
+            self.needs_render = False
             for instance, idx in effects:
                 instance.run_effect(idx)
         except Exception as e:
             self.log_error(f"Render Step Failure: {e}")
-        finally:
             self.needs_render = False
 
     def _render_notifications(self):
