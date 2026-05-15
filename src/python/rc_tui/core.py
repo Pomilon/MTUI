@@ -1,10 +1,48 @@
 class StyleSheet:
+    RECOGNIZED = {
+        'fg', 'bg', 'bold', 'italic', 'underline', 'strikethrough',
+        'padding', 'margin', 'width', 'height', 'flex_grow', 'flex_direction',
+        'gap', 'border', 'border_type', 'border_fg', 'border_bg',
+        'hover_style', 'focus_style', 'tooltip',
+        'text_transform', 'box_shadow',
+        'align_items', 'justify_content',
+        'padding_top', 'padding_bottom', 'padding_left', 'padding_right',
+        'margin_top', 'margin_bottom', 'margin_left', 'margin_right',
+        'title', 'color', 'bg_color', 'font_weight', 'text_align', 'font_family',
+        'on_click', 'on_change', 'on_submit', 'on_key_down', 'on_scroll',
+        'key', 'ref', 'style', 'children', 'text',
+        'scrollbar_style', 'scrollbar_track_style',
+        'x', 'y', 'offset', 'count', 'language', 'content',
+        'message', 'duration', 'dim',
+        'label', 'checked', 'selected_index', 'options',
+        'value', 'placeholder', 'type', 'on', 'min', 'max',
+        'items', 'render_item', 'item_height',
+        'columns', 'data',
+        'font', 'size',
+    }
+    BOOL_PROPS = {'bold', 'italic', 'underline', 'strikethrough', 'border', 'dim'}
+    INT_PROPS = {
+        'padding', 'margin', 'gap',
+        'padding_top', 'padding_bottom', 'padding_left', 'padding_right',
+        'margin_top', 'margin_bottom', 'margin_left', 'margin_right',
+        'width', 'height', 'flex_grow', 'x', 'y',
+        'min', 'max', 'item_height', 'offset', 'count',
+        'duration', 'selected_index',
+    }
+
     @staticmethod
     def create(styles):
-        """
-        Creates a StyleSheet object. Currently just returns the dict,
-        but can be expanded for validation or performance (pre-processing).
-        """
+        import warnings
+        for name, style in styles.items():
+            if not isinstance(style, dict):
+                raise TypeError(f"Style '{name}': expected dict, got {type(style).__name__}")
+            for key, value in style.items():
+                if key not in StyleSheet.RECOGNIZED:
+                    warnings.warn(f"Style '{name}': unknown prop '{key}'")
+                if key in StyleSheet.BOOL_PROPS and not isinstance(value, bool):
+                    raise TypeError(f"Style '{name}.{key}': expected bool, got {type(value).__name__}")
+                if key in StyleSheet.INT_PROPS and value is not None and not isinstance(value, (int, float)):
+                    raise TypeError(f"Style '{name}.{key}': expected number, got {type(value).__name__}")
         return styles
 
 def resolve_node_style(props):

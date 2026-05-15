@@ -318,6 +318,49 @@ def test_normal_window_focus_untouched():
     print("test_normal_window_focus_untouched PASSED")
 
 
+def test_stylesheet_create_valid():
+    from rc_tui import StyleSheet
+
+    styles = StyleSheet.create({
+        'container': {
+            'bg': (20, 20, 30),
+            'padding': 2,
+            'border': True,
+            'bold': False,
+        }
+    })
+    assert styles['container']['bg'] == (20, 20, 30)
+    assert styles['container']['border'] is True
+    print("test_stylesheet_create_valid PASSED")
+
+
+def test_stylesheet_create_type_error():
+    from rc_tui import StyleSheet
+
+    try:
+        StyleSheet.create({
+            'bad_bool': {'border': 'yes'}
+        })
+        assert False, "Should have raised TypeError"
+    except TypeError as e:
+        assert "bool" in str(e).lower()
+        print("test_stylesheet_create_type_error PASSED")
+
+
+def test_stylesheet_create_warns_unknown():
+    from rc_tui import StyleSheet
+    import warnings
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        StyleSheet.create({
+            'test': {'nonexistent_prop': 42}
+        })
+        assert len(w) >= 1, "Expected at least one warning"
+        assert "unknown" in str(w[0].message).lower() or "nonexistent" in str(w[0].message).lower()
+        print("test_stylesheet_create_warns_unknown PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -331,3 +374,6 @@ if __name__ == "__main__":
     test_ref_no_op_when_absent()
     test_modal_focus_trapping()
     test_normal_window_focus_untouched()
+    test_stylesheet_create_valid()
+    test_stylesheet_create_type_error()
+    test_stylesheet_create_warns_unknown()
