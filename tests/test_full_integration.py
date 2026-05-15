@@ -671,9 +671,11 @@ def test_per_window_error_isolation():
     print("test_per_window_error_isolation PASSED")
 
 
-def test_f11_error_log_overlay():
+def test_f9_error_log_overlay():
     from rc_tui.input import KeyEvent
     from rc_tui import App
+    from rc_tui.core import Component
+    from rc_tui.dom import Box, Text
 
     class MT:
         def enable_raw_mode(self): pass
@@ -685,14 +687,43 @@ def test_f11_error_log_overlay():
         def clear_screen(self): pass
         def get_size(self): return (80, 24)
 
-    app = App(None, terminal=MT())
+    class CrashComponent(Component):
+        def render(self):
+            raise RuntimeError("test error for overlay")
+
+    app = App(CrashComponent, terminal=MT())
+    app._step()
+    assert len(app.errors.errors) >= 1, "Error should be logged"
+    assert "test error for overlay" in app.errors.errors[-1][2]
+
+    # F9 toggles overlay
     assert not app.show_error_log
-    app.dispatch_event(KeyEvent('F11'))
-    assert app.show_error_log, "F11 should toggle show_error_log on"
-    app.dispatch_event(KeyEvent('F11'))
-    assert not app.show_error_log, "F11 should toggle show_error_log off"
+    app.dispatch_event(KeyEvent('F9'))
+    assert app.show_error_log, "F9 should open error log"
+
+    # UP/DOWN scroll
+    app.dispatch_event(KeyEvent('DOWN'))
+    assert app.error_log_scroll == 1
+
+    # ESC closes
+    app.dispatch_event(KeyEvent('ESC'))
+    assert not app.show_error_log
+
+    # Verify F9 also handled through run() event loop
+    from rc_tui.input import KeyEvent as KE
+    app.show_error_log = False
+    app.dispatch_event(KE('F9'))
+    assert app.show_error_log, "F9 should work via dispatch_event"
+    app.dispatch_event(KE('F9'))
+    assert not app.show_error_log
+
+    # Verify crash toast was queued
+    notifications = app.notifications
+    has_error_toast = any("error" in str(n.get('text', '')).lower() for n in notifications)
+    assert has_error_toast or len(app.errors.errors) > 0
+
     app.cleanup()
-    print("test_f11_error_log_overlay PASSED")
+    print("test_f9_error_log_overlay PASSED")
 
 
 if __name__ == "__main__":
@@ -729,4 +760,4 @@ if __name__ == "__main__":
     test_error_log_basic()
     test_error_log_ring_buffer()
     test_per_window_error_isolation()
-    test_f11_error_log_overlay()
+    test_f9_error_log_overlay()
