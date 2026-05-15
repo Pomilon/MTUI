@@ -361,6 +361,36 @@ def test_stylesheet_create_warns_unknown():
         print("test_stylesheet_create_warns_unknown PASSED")
 
 
+def test_widget_registry():
+    from rc_tui.widgets import register, _MEASURE, _DRAW, _CLICK, _KEY
+
+    register('test_widget', measure=lambda n, mw, mh: (10, 5))
+    assert 'test_widget' in _MEASURE
+    assert _MEASURE['test_widget'](None, 100, 50) == (10, 5)
+    print("test_widget_registry PASSED")
+
+
+def test_widget_dispatch_integration():
+    from rc_tui.widgets import register, dispatch_widget_click, dispatch_widget_key
+    from rc_tui.input import KeyEvent
+
+    results = []
+    register('test_click', on_click=lambda n, e: results.append('click'))
+    register('test_key', on_key=lambda n, e: results.append(f"key_{e.key}"))
+
+    dispatch_widget_click('test_click', None, None)
+    assert results == ['click'], f"Expected ['click'], got {results}"
+
+    dispatch_widget_key('test_key', None, KeyEvent('ENTER'))
+    assert results == ['click', 'key_ENTER'], f"Expected ['click', 'key_ENTER'], got {results}"
+
+    dispatch_widget_click('unknown_type', None, None)
+    dispatch_widget_key('unknown_type', None, KeyEvent('x'))
+    assert results == ['click', 'key_ENTER'], "Unknown types should be no-ops"
+
+    print("test_widget_dispatch_integration PASSED")
+
+
 if __name__ == "__main__":
     test_full_integration()
     test_button_keyboard_activation()
@@ -377,3 +407,5 @@ if __name__ == "__main__":
     test_stylesheet_create_valid()
     test_stylesheet_create_type_error()
     test_stylesheet_create_warns_unknown()
+    test_widget_registry()
+    test_widget_dispatch_integration()
