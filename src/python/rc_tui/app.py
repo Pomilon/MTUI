@@ -6,6 +6,7 @@ from .input import InputManager, MouseEvent, KeyEvent
 from .canvas import Canvas
 from .dom import SelectMenu, Box, ScrollBox, Button
 from . import tui_core
+import asyncio
 import time
 import traceback
 import sys
@@ -83,6 +84,8 @@ class App:
         self.focused_node = None
         self._pending_effects = []
         self._pending_effects_set = set()
+
+        self._async_tasks = set()
 
         self.errors = ErrorLog("rc_tui_errors.log")
         self.show_error_log = False
@@ -330,6 +333,16 @@ class App:
 
     def stop(self):
         self._running = False
+        # Cancel any pending async tasks
+        for task in self._async_tasks:
+            task.cancel()
+        self._async_tasks.clear()
+
+    def create_task(self, coro):
+        task = asyncio.ensure_future(coro)
+        self._async_tasks.add(task)
+        task.add_done_callback(self._async_tasks.discard)
+        return task
 
     def run(self):
         self._running = True
@@ -380,6 +393,61 @@ class App:
                 
                 time.sleep(0.01)
         except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            self.errors.log("FATAL", f"App crash: {e}", traceback.format_exc())
+        finally:
+            self.cleanup()
+
+    async def arun(self):
+        self._running = True
+        self.request_render()
+
+        try:
+            while self._running:
+                # Check for resize
+                cols, rows = self.terminal.get_size()
+                if cols != self.canvas.width or rows != self.canvas.height:
+                    self.request_render()
+
+                if self.needs_render:
+                    self._step()
+
+                # Check for input
+                events = self.input_manager.get_events()
+                for event in events:
+                    if isinstance(event, KeyEvent) and event.key == 'CTRL_C':
+                        self._running = False
+                        break
+                    if isinstance(event, KeyEvent) and event.key == 'F12':
+                        self.show_inspector = not self.show_inspector
+                        self.request_render()
+                        continue
+
+                    if isinstance(event, KeyEvent) and event.key == 'CTRL_E':
+                        self.show_error_log = not self.show_error_log
+                        self.error_log_scroll = 0
+                        self.request_render()
+                        continue
+
+                    if isinstance(event, KeyEvent) and self.show_error_log:
+                        if event.key == 'UP':
+                            self.error_log_scroll = max(0, self.error_log_scroll - 1)
+                            self.request_render()
+                            continue
+                        if event.key == 'DOWN':
+                            self.error_log_scroll += 1
+                            self.request_render()
+                            continue
+                        if event.key == 'ESC':
+                            self.show_error_log = False
+                            self.request_render()
+                            continue
+
+                    self.dispatch_event(event)
+
+                await asyncio.sleep(0.01)
+        except asyncio.CancelledError:
             pass
         except Exception as e:
             self.errors.log("FATAL", f"App crash: {e}", traceback.format_exc())
