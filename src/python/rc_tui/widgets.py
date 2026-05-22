@@ -595,6 +595,71 @@ def _key_button(node, event):
     return False
 
 
+def _measure_slider(node, max_w, max_h):
+    w_prop = node.props.get('width')
+    w = layout_parse_dim(w_prop, max_w) if w_prop is not None else (max_w if max_w is not None else 20)
+    return w, 1
+
+
+def _draw_slider(node, canvas, style):
+    val = node.props.get('value', 0)
+    mn = node.props.get('min', 0)
+    mx = node.props.get('max', 100)
+
+    progress = (val - mn) / (mx - mn) if mx != mn else 0
+    progress = max(0, min(1, progress))
+
+    width = node.w
+    if width < 3:
+        canvas.draw_text(node.screen_x, node.screen_y, "█" * width, style)
+    else:
+        inner_w = width - 2
+        filled = int(progress * inner_w)
+        empty = inner_w - filled
+        bar = "█" * filled + "░" * empty
+        canvas.draw_text(node.screen_x, node.screen_y, f"[{bar}]", style)
+
+
+def _key_slider(node, event):
+    val = node.props.get('value', 0)
+    mn = node.props.get('min', 0)
+    mx = node.props.get('max', 100)
+
+    if event.key == 'RIGHT':
+        new_val = min(mx, val + 1)
+    elif event.key == 'LEFT':
+        new_val = max(mn, val - 1)
+    else:
+        return False
+
+    if new_val != val:
+        node.props['value'] = new_val
+        node.props['progress'] = (new_val - mn) / (mx - mn) if mx != mn else 0
+        on_change = node.props.get('on_change')
+        if on_change:
+            on_change(new_val)
+    return True
+
+
+def _click_slider(node, event, app):
+    val = node.props.get('value', 0)
+    mn = node.props.get('min', 0)
+    mx = node.props.get('max', 100)
+
+    inner_w = max(1, node.w - 2)
+    rel_x = event.x - (node.screen_x + 1)
+    progress = max(0, min(1, rel_x / inner_w))
+    new_val = mn + progress * (mx - mn)
+
+    if new_val != val:
+        node.props['value'] = new_val
+        node.props['progress'] = progress
+        on_change = node.props.get('on_change')
+        if on_change:
+            on_change(new_val)
+    return True
+
+
 def register(type_name, *, measure=None, draw=None, on_click=None, on_key=None):
     if measure:
         _MEASURE[type_name] = measure
@@ -624,6 +689,7 @@ register('markdown', measure=_measure_markdown)
 register('linenumber', measure=_measure_linenumber)
 register('asciifont', measure=_measure_asciifont)
 register('toast', measure=_measure_toast)
+register('slider', measure=_measure_slider)
 
 
 register('text', draw=_draw_text)
@@ -642,6 +708,7 @@ register('button', draw=_draw_button)
 register('checkbox', draw=_draw_checkbox)
 register('progressbar', draw=_draw_progressbar)
 register('input', draw=_draw_input)
+register('slider', draw=_draw_slider)
 
 # Click handlers
 register('tabselect', on_click=_click_tabselect)
@@ -650,6 +717,7 @@ register('checkbox', on_click=_click_checkbox)
 register('radiobutton', on_click=_click_radiobutton)
 register('switch', on_click=_click_switch)
 register('scrollbox', on_click=_click_scrollbox)
+register('slider', on_click=_click_slider)
 
 # Key handlers
 register('tabselect', on_key=_key_tabselect)
@@ -660,6 +728,7 @@ register('switch', on_key=_key_switch)
 register('input', on_key=_key_input)
 register('textarea', on_key=_key_textarea)
 register('button', on_key=_key_button)
+register('slider', on_key=_key_slider)
 
 
 def dispatch_widget_click(type_name, node, event, app):

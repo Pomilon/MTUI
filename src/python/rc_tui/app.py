@@ -427,7 +427,7 @@ class App:
             self.hovered_node = target
             
             if event.type == 'CLICK':
-                focusable_types = ('input', 'button', 'checkbox', 'radiobutton', 'switch', 'select', 'tabselect', 'textarea')
+                focusable_types = ('input', 'button', 'checkbox', 'radiobutton', 'switch', 'select', 'tabselect', 'textarea', 'slider')
                 new_focus = target if target and target.type in focusable_types else None
                 self._update_focus(node, new_focus)
                 self.request_render()
@@ -533,7 +533,7 @@ class App:
         if node is None:
             return
 
-        focusable_types = ('input', 'button', 'checkbox', 'radiobutton', 'switch', 'select', 'tabselect', 'textarea')
+        focusable_types = ('input', 'button', 'checkbox', 'radiobutton', 'switch', 'select', 'tabselect', 'textarea', 'slider')
         
         all_focusable = []
         def collect(n):
