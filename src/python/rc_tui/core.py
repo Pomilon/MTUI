@@ -25,7 +25,7 @@ class StyleSheet:
         'padding', 'margin', 'gap',
         'padding_top', 'padding_bottom', 'padding_left', 'padding_right',
         'margin_top', 'margin_bottom', 'margin_left', 'margin_right',
-        'width', 'height', 'flex_grow', 'x', 'y',
+        'flex_grow', 'x', 'y',
         'min', 'max', 'item_height', 'offset', 'count',
         'duration', 'selected_index',
     }
